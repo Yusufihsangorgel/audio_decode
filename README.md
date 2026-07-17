@@ -1,5 +1,7 @@
 # audio_decode
 
+![Compressed bytes are decoded to PCM samples](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/architecture.png)
+
 Native Ogg Vorbis and MP3 decoding to raw PCM for Dart, over FFI. The C
 decoders are compiled from source by a Dart build hook, so the package is
 self-contained: no platform plugins, no bundled binary, and no system library to

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="420" viewBox="0 0 1100 420" font-family="Menlo, monospace">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#38BDF8"/></marker></defs>
+  <rect width="1100" height="420" fill="#0B1220"/>
+  <text x="60" y="50" font-size="23" font-weight="bold" fill="#E2E8F0">Compressed bytes in, PCM samples out</text>
+  <text x="60" y="76" font-size="14" fill="#94A3B8">The first bytes pick the decoder; stb_vorbis or minimp3 turns the file into raw 16-bit samples you can read.</text>
+
+  <!-- encoded blob -->
+  <rect x="60" y="150" width="150" height="150" rx="8" fill="#0E1A2E" stroke="#334155"/>
+  <text x="78" y="182" font-size="12" fill="#334155">4F 67 67 53</text><text x="78" y="204" font-size="12" fill="#64748B">"OggS" ...</text>
+  <text x="78" y="232" font-size="12" fill="#334155">or FF FB / ID3</text><text x="78" y="254" font-size="12" fill="#64748B">MP3 frame</text>
+  <text x="135" y="330" font-size="12.5" fill="#64748B" text-anchor="middle">.ogg / .mp3</text>
+
+  <!-- sniff + decode -->
+  <path d="M216 225 L300 225" stroke="#38BDF8" stroke-width="2" marker-end="url(#a)"/>
+  <text x="222" y="216" font-size="11.5" fill="#38BDF8">detectFormat</text>
+  <rect x="300" y="196" width="150" height="58" rx="7" fill="#111C2E" stroke="#38BDF8"/>
+  <text x="375" y="220" font-size="13" fill="#E2E8F0" text-anchor="middle">stb_vorbis /</text>
+  <text x="375" y="240" font-size="13" fill="#E2E8F0" text-anchor="middle">minimp3</text>
+
+  <!-- waveform output -->
+  <path d="M456 225 L512 225" stroke="#38BDF8" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="512" y="150" width="520" height="150" rx="8" fill="#0E1A2E" stroke="#1E3A5F"/>
+  <line x1="512" y1="225" x2="1032" y2="225" stroke="#1E3A5F" stroke-width="1"/>
+  <path d="M522,225 L525,242 L528,249 L531,239 L535,218 L538,198 L541,196 L544,214 L547,242 L550,261 L553,256 L557,228 L560,196 L563,182 L566,197 L569,233 L572,266 L575,271 L579,245 L582,203 L585,175 L588,180 L591,217 L594,260 L597,280 L600,263 L604,219 L607,178 L610,169 L613,198 L616,246 L619,279 L622,276 L626,238 L629,191 L632,168 L635,183 L638,227 L641,268 L644,280 L648,254 L651,210 L654,177 L657,178 L660,210 L663,251 L666,273 L670,262 L673,227 L676,193 L679,182 L682,201 L685,234 L688,258 L692,259 L695,238 L698,210 L701,195 L704,201 L707,222 L710,242 L714,249 L717,239 L720,222 L723,206 L726,202 L729,214 L732,236 L736,253 L739,252 L742,231 L745,203 L748,188 L751,198 L754,228 L758,258 L761,268 L764,247 L767,210 L770,181 L773,181 L776,212 L779,253 L783,277 L786,265 L789,225 L792,184 L795,170 L798,193 L801,239 L805,276 L808,278 L811,244 L814,197 L817,168 L820,178 L823,220 L827,265 L830,282 L833,260 L836,215 L839,177 L842,172 L845,203 L849,248 L852,276 L855,269 L858,233 L861,193 L864,177 L867,193 L871,230 L874,261 L877,266 L880,244 L883,211 L886,190 L889,193 L893,217 L896,244 L899,256 L902,246 L905,224 L908,206 L911,202 L914,213 L918,231 L921,246 L924,248 L927,233 L930,210 L933,195 L936,200 L940,223 L943,251 L946,262 L949,248 L952,217 L955,188 L958,184 L962,208 L965,246 L968,271 L971,266 L974,231 L977,191 L980,173 L984,190 L987,232 L990,271 L993,279 L996,250 L999,203 L1002,171 L1006,175 L1009,214 L1012,260 L1015,283 L1018,266 L1021,221" stroke="#38BDF8" stroke-width="1.6" fill="none"/>
+  <text x="528" y="176" font-size="12.5" fill="#94A3B8">Int16List samples, interleaved</text>
+
+  <text x="512" y="332" font-size="13" fill="#94A3B8">sampleRate, channels, duration, then encodeWav() to save or play.</text>
+  <text x="60" y="392" font-size="12.5" fill="#64748B">Both decoders are single-file public-domain C, vendored and compiled by build hooks; works in plain Dart, no platform plugin.</text>
+</svg>
