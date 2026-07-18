@@ -1,3 +1,5 @@
+![audio_decode banner](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/banner.png)
+
 # audio_decode
 
 ![Compressed bytes are decoded to PCM samples](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/architecture.png)
