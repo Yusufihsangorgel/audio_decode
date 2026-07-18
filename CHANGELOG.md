@@ -1,3 +1,10 @@
+## 0.1.1
+
+- Move the stb_vorbis and minimp3 attributions out of `LICENSE` into
+  `THIRD_PARTY_NOTICES.md`, so `LICENSE` is the plain MIT text that automated
+  license detection recognises. The attributions themselves are unchanged and
+  still ship with the package.
+
 ## 0.1.0
 
 - Initial release.
