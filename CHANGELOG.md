@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Docs: sharpen the pub.dev description to lead with the value and the terms people search.
+
 ## 0.1.1
 
 - Move the stb_vorbis and minimp3 attributions out of `LICENSE` into

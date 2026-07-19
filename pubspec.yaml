@@ -1,8 +1,9 @@
 name: audio_decode
 description: >-
-  Native Ogg Vorbis and MP3 decoding to PCM for Dart via stb_vorbis and minimp3
-  over FFI. Self-contained, pure-Dart friendly, no platform plugins.
-version: 0.1.1
+  Decode MP3 and Ogg Vorbis to raw PCM in Dart, over FFI. Compiles stb_vorbis
+  and minimp3 from source: self-contained, pure-Dart friendly, no platform
+  plugins or prebuilt binaries.
+version: 0.1.2
 repository: https://github.com/Yusufihsangorgel/audio_decode
 issue_tracker: https://github.com/Yusufihsangorgel/audio_decode/issues
 
