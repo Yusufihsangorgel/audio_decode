@@ -1,3 +1,10 @@
+## 0.1.3
+
+- Example: show what to do with the decoded PCM, not just how to re-encode it. It
+  now reduces the samples to a one-line waveform (peak amplitude per column,
+  scaled to the loudest column), the primitive a waveform view or a silence
+  detector is built on.
+
 ## 0.1.2
 
 - Docs: sharpen the pub.dev description to lead with the value and the terms people search.
