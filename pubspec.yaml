@@ -3,7 +3,7 @@ description: >-
   Decode MP3 and Ogg Vorbis to raw PCM in Dart, over FFI. Compiles stb_vorbis
   and minimp3 from source: self-contained, pure-Dart friendly, no platform
   plugins or prebuilt binaries.
-version: 0.2.0
+version: 0.2.1
 repository: https://github.com/Yusufihsangorgel/audio_decode
 issue_tracker: https://github.com/Yusufihsangorgel/audio_decode/issues
 
@@ -13,6 +13,13 @@ topics:
   - vorbis
   - pcm
   - ffi
+
+screenshots:
+  - description: >-
+      Compressed bytes in, PCM samples out: the first bytes pick stb_vorbis or m
+      inimp3, which turns an .ogg or .mp3 into interleaved 16-bit samples with s
+      ample rate and duration.
+    path: doc/architecture.png
 
 environment:
   sdk: ^3.9.0
