@@ -80,3 +80,27 @@ AD_EXPORT int ad_decode_vorbis(const unsigned char* bytes, int len,
 // plain malloc/realloc allocations from the same C runtime, so a single free()
 // releases either one.
 AD_EXPORT void ad_free(short* pointer) { free(pointer); }
+
+// Reads an Ogg Vorbis stream's geometry without decoding any audio.
+//
+// Vorbis carries the stream length in its final page, so stb_vorbis answers
+// this from the container after opening the stream: no frames are decoded and
+// no PCM buffer is allocated. On success returns 0 and writes the channel
+// count, sample rate and per-channel sample count. Returns non-zero when the
+// bytes are not a readable Vorbis stream.
+AD_EXPORT int ad_info_vorbis(const unsigned char* bytes, int len, int* channels,
+                             int* rate, int* samplesPerChannel) {
+  int error = VORBIS__no_error;
+  stb_vorbis* handle = stb_vorbis_open_memory(bytes, len, &error, NULL);
+  if (handle == NULL) {
+    return 1;
+  }
+  const stb_vorbis_info info = stb_vorbis_get_info(handle);
+  const unsigned int samples = stb_vorbis_stream_length_in_samples(handle);
+  stb_vorbis_close(handle);
+
+  *channels = info.channels;
+  *rate = (int)info.sample_rate;
+  *samplesPerChannel = (int)samples;
+  return 0;
+}

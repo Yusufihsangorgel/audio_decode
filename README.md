@@ -70,12 +70,43 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
 - `detectFormat(Uint8List)` returns `AudioFormat.ogg`, `AudioFormat.mp3` or
   `AudioFormat.unknown`.
 - `encodeWav(PcmAudio)` returns a canonical 16-bit PCM WAV as `Uint8List`.
+- `audioInfo(Uint8List)` returns an `AudioInfo` with `sampleRate`, `channels`,
+  `frameCount` and `duration` without decoding to PCM; `oggInfo` and `mp3Info`
+  do the same for a known format. See below.
 
 Empty input throws `ArgumentError`. Bytes that are not decodable audio throw
 `AudioDecodeException`.
 
 Samples are copied out of native memory before each call returns, so there is
 no native buffer for the caller to manage.
+
+## Duration without decoding
+
+Showing track lengths in a playlist, validating an upload, or picking which
+files to process only needs a file's shape, not its samples. Decoding for that
+is expensive: four minutes of 44.1 kHz stereo is 40 MB of PCM, and you throw
+all of it away to read one number.
+
+`audioInfo` answers from the stream itself and allocates no PCM at all:
+
+```dart
+final info = audioInfo(await File('track.mp3').readAsBytes());
+print('${info.duration} at ${info.sampleRate} Hz, ${info.channels} ch');
+```
+
+It reports exactly what a full decode would, which the tests check against
+`decodeAudio` for every fixture. Measured on a one-second stereo fixture,
+warmed up and averaged (Apple M-series):
+
+| Format | `audioInfo` | `decodeAudio` |
+|---|---|---|
+| Ogg Vorbis | 107 µs | 511 µs |
+| MP3 | 0.9 µs | 217 µs |
+
+The two formats differ because of what each has to do. Vorbis stores its
+length in the container, so stb_vorbis opens the stream and reads it. MP3 has
+no total-length field, so the frame headers still have to be walked; what is
+skipped is the decoding and the PCM buffer, which is where the time goes.
 
 ## A note on MP3 length
 

@@ -1,3 +1,15 @@
+## 0.2.0
+
+- Add `audioInfo`, `oggInfo` and `mp3Info`, which return an `AudioInfo` with
+  `sampleRate`, `channels`, `frameCount` and `duration` without decoding to
+  PCM. Reading a track's length used to mean decoding the whole file, which for
+  four minutes of 44.1 kHz stereo materializes 40 MB of samples you then throw
+  away. The new calls allocate no PCM: Vorbis answers from the container,
+  and MP3 walks its frame headers with the decoder's synthesis step skipped.
+  Measured on a one-second stereo fixture (Apple M-series, warmed up): Ogg
+  107 µs against 511 µs for a full decode, MP3 0.9 µs against 217 µs. The
+  reported geometry is checked against `decodeAudio` for every test fixture.
+
 ## 0.1.3
 
 - Example: show what to do with the decoded PCM, not just how to re-encode it. It

@@ -34,9 +34,13 @@ export 'src/audio_decode_base.dart'
     show
         AudioDecodeException,
         AudioFormat,
+        AudioInfo,
         PcmAudio,
+        audioInfo,
         decodeAudio,
         decodeMp3,
         decodeOgg,
         detectFormat,
-        encodeWav;
+        encodeWav,
+        mp3Info,
+        oggInfo;

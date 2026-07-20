@@ -148,6 +148,82 @@ PcmAudio decodeAudio(Uint8List bytes) {
   }
 }
 
+/// An audio stream's geometry, read without decoding it to PCM.
+///
+/// This is what [PcmAudio] reports minus the samples themselves. Reach for it
+/// when you only need the shape of a file: showing track lengths in a
+/// playlist, validating an upload's duration, or picking which files to
+/// process. Decoding a whole album to PCM just to display its running time
+/// costs orders of magnitude more memory than the answer is worth.
+class AudioInfo {
+  /// Creates an [AudioInfo]; normally you get one from [audioInfo].
+  const AudioInfo({
+    required this.sampleRate,
+    required this.channels,
+    required this.frameCount,
+  });
+
+  /// Frames per second.
+  final int sampleRate;
+
+  /// Interleaved channel count: 1 is mono, 2 is stereo.
+  final int channels;
+
+  /// The number of frames, that is samples per channel.
+  final int frameCount;
+
+  /// How long the audio plays at [sampleRate].
+  Duration get duration => sampleRate == 0
+      ? Duration.zero
+      : Duration(microseconds: (frameCount * 1000000) ~/ sampleRate);
+
+  @override
+  String toString() =>
+      'AudioInfo($sampleRate Hz, $channels ch, $frameCount frames, $duration)';
+}
+
+/// Reads an Ogg Vorbis stream's geometry without decoding any audio.
+///
+/// Vorbis stores the stream length in its container, so this is answered from
+/// the header pages: no frames are decoded and no PCM is allocated.
+///
+/// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
+/// if the bytes are not a readable Vorbis stream.
+AudioInfo oggInfo(Uint8List bytes) => _info(bytes, adInfoVorbis, 'Ogg Vorbis');
+
+/// Reads an MP3 stream's geometry without producing any audio.
+///
+/// MP3 carries no total-length field, so the frame headers still have to be
+/// walked; what is skipped is the decoding itself and the PCM buffer, which is
+/// where the time and the memory go. The frame count matches [decodeMp3]'s,
+/// including the codec's encoder and decoder delay.
+///
+/// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
+/// if no MP3 frame is found.
+AudioInfo mp3Info(Uint8List bytes) => _info(bytes, adInfoMp3, 'MP3');
+
+/// Reads [bytes]'s geometry after sniffing its format with [detectFormat],
+/// dispatching to [oggInfo] or [mp3Info].
+///
+/// ```dart
+/// final info = audioInfo(await File('track.mp3').readAsBytes());
+/// print('${info.duration} at ${info.sampleRate} Hz');
+/// ```
+///
+/// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
+/// if the format is neither Ogg Vorbis nor MP3.
+AudioInfo audioInfo(Uint8List bytes) {
+  _checkNotEmpty(bytes);
+  switch (detectFormat(bytes)) {
+    case AudioFormat.ogg:
+      return oggInfo(bytes);
+    case AudioFormat.mp3:
+      return mp3Info(bytes);
+    case AudioFormat.unknown:
+      throw AudioDecodeException('unrecognized audio format');
+  }
+}
+
 /// Encodes [audio] as a canonical 16-bit PCM WAV (RIFF) file.
 ///
 /// The result is a standard little-endian WAV with a 44-byte header and the
@@ -249,6 +325,47 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
     malloc.free(outRate);
     malloc.free(outSamplesPerChannel);
     malloc.free(outSamples);
+  }
+}
+
+typedef _InfoFn =
+    int Function(
+      Pointer<Uint8>,
+      int,
+      Pointer<Int>,
+      Pointer<Int>,
+      Pointer<Int>,
+    );
+
+AudioInfo _info(Uint8List bytes, _InfoFn readInfo, String formatName) {
+  _checkNotEmpty(bytes);
+
+  final dataPtr = malloc<Uint8>(bytes.length);
+  final outChannels = malloc<Int>();
+  final outRate = malloc<Int>();
+  final outFrames = malloc<Int>();
+  try {
+    dataPtr.asTypedList(bytes.length).setAll(0, bytes);
+    final rc = readInfo(
+      dataPtr,
+      bytes.length,
+      outChannels,
+      outRate,
+      outFrames,
+    );
+    if (rc != 0) {
+      throw AudioDecodeException('not a readable $formatName stream');
+    }
+    return AudioInfo(
+      sampleRate: outRate.value,
+      channels: outChannels.value,
+      frameCount: outFrames.value,
+    );
+  } finally {
+    malloc.free(dataPtr);
+    malloc.free(outChannels);
+    malloc.free(outRate);
+    malloc.free(outFrames);
   }
 }
 

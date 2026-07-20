@@ -51,6 +51,45 @@ external int adDecodeMp3(
   Pointer<Pointer<Int16>> outSamples,
 );
 
+/// Reads an Ogg Vorbis stream's geometry without decoding audio. Returns 0 on
+/// success, non-zero on failure. Allocates nothing, so there is no buffer to
+/// free.
+@Native<
+  Int Function(
+    Pointer<Uint8>,
+    Int,
+    Pointer<Int>,
+    Pointer<Int>,
+    Pointer<Int>,
+  )
+>(symbol: 'ad_info_vorbis')
+external int adInfoVorbis(
+  Pointer<Uint8> bytes,
+  int length,
+  Pointer<Int> outChannels,
+  Pointer<Int> outRate,
+  Pointer<Int> outSamplesPerChannel,
+);
+
+/// Reads an MP3 stream's geometry without producing audio. Returns 0 on
+/// success, non-zero on failure.
+@Native<
+  Int Function(
+    Pointer<Uint8>,
+    Int,
+    Pointer<Int>,
+    Pointer<Int>,
+    Pointer<Int>,
+  )
+>(symbol: 'ad_info_mp3')
+external int adInfoMp3(
+  Pointer<Uint8> bytes,
+  int length,
+  Pointer<Int> outChannels,
+  Pointer<Int> outRate,
+  Pointer<Int> outSamplesPerChannel,
+);
+
 /// Frees a sample buffer returned by [adDecodeVorbis] or [adDecodeMp3].
 @Native<Void Function(Pointer<Int16>)>(symbol: 'ad_free')
 external void adFree(Pointer<Int16> samples);

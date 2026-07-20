@@ -103,3 +103,49 @@ AD_EXPORT int ad_decode_mp3(const unsigned char* bytes, int len, int* channels,
   *out = buffer;
   return 0;
 }
+
+// Reads an MP3 stream's geometry without producing any audio.
+//
+// minimp3 parses a frame's header and returns that frame's sample count when
+// `pcm` is NULL, skipping the synthesis step entirely, so this walks the same
+// frames ad_decode_mp3() would but allocates nothing and does no filtering.
+// The stream still has to be walked because MP3 carries no total-length field
+// in its header; what is saved is the PCM buffer and the decode work, not the
+// scan. On success returns 0 and writes the channel count, sample rate and
+// per-channel sample count. Returns non-zero when no audio frame is found.
+AD_EXPORT int ad_info_mp3(const unsigned char* bytes, int len, int* channels,
+                          int* rate, int* totalSamplesPerChannel) {
+  mp3dec_t decoder;
+  mp3dec_init(&decoder);
+
+  mp3dec_frame_info_t info;
+  size_t samples_per_channel = 0;
+  int stream_channels = 0;
+  int stream_rate = 0;
+
+  const unsigned char* cursor = bytes;
+  int remaining = len;
+
+  while (remaining > 0) {
+    const int frame_samples =
+        mp3dec_decode_frame(&decoder, cursor, remaining, NULL, &info);
+    if (info.frame_bytes <= 0) {
+      break;
+    }
+    if (frame_samples > 0) {
+      stream_channels = info.channels;
+      stream_rate = info.hz;
+      samples_per_channel += (size_t)frame_samples;
+    }
+    cursor += info.frame_bytes;
+    remaining -= info.frame_bytes;
+  }
+
+  if (stream_channels <= 0) {
+    return 1;
+  }
+  *channels = stream_channels;
+  *rate = stream_rate;
+  *totalSamplesPerChannel = (int)samples_per_channel;
+  return 0;
+}
