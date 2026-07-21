@@ -1,3 +1,13 @@
+## 0.3.0
+
+- Add `PcmAudio.toFloat32()`, `PcmAudio.channel(int)` and `PcmAudio.toMono()`.
+  The samples were only exposed as raw interleaved `Int16List`, so waveform,
+  analysis and machine-learning callers all had to write the same
+  divide-by-32768 loop and manual channel split. `toFloat32` returns the
+  normalized `[-1.0, 1.0]` floats, `channel` deinterleaves one channel into a
+  `Float32List`, and `toMono` averages the channels into a mono `PcmAudio`. All
+  additive; existing fields and methods are unchanged.
+
 ## 0.2.3
 
 - Widen the native-toolchain constraints so the package can be installed in a

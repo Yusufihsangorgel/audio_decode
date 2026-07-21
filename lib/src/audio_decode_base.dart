@@ -69,7 +69,66 @@ class PcmAudio {
   Duration get duration => sampleRate == 0
       ? Duration.zero
       : Duration(microseconds: (frameCount * 1000000) ~/ sampleRate);
+
+  /// The samples as normalized floats in the range [-1.0, 1.0], interleaved by
+  /// channel like [samples].
+  ///
+  /// Each 16-bit sample is divided by 32768, so the full-scale negative value
+  /// -32768 maps to -1.0 and +16384 maps to 0.5. This is the form most FFT,
+  /// machine-learning and waveform code expects; use it instead of dividing
+  /// [samples] by hand.
+  Float32List toFloat32() {
+    final out = Float32List(samples.length);
+    for (var i = 0; i < samples.length; i++) {
+      out[i] = samples[i] / _int16Scale;
+    }
+    return out;
+  }
+
+  /// The normalized samples of a single channel, deinterleaved.
+  ///
+  /// [index] selects the channel, from 0 up to `channels - 1`; for stereo, 0 is
+  /// the left channel and 1 is the right. The result has one value per frame,
+  /// each divided by 32768 into the range [-1.0, 1.0] like [toFloat32].
+  ///
+  /// Throws a [RangeError] if [index] is not a valid channel.
+  Float32List channel(int index) {
+    if (index < 0 || index >= channels) {
+      throw RangeError.range(index, 0, channels - 1, 'index');
+    }
+    final frames = frameCount;
+    final out = Float32List(frames);
+    for (var i = 0; i < frames; i++) {
+      out[i] = samples[i * channels + index] / _int16Scale;
+    }
+    return out;
+  }
+
+  /// A single-channel copy of this audio, averaging the channels frame by frame.
+  ///
+  /// The [sampleRate] is preserved and the result has `channels == 1`; each
+  /// mono sample is the mean of that frame's channel samples, rounded to the
+  /// nearest 16-bit value. Returns this instance unchanged when it is already
+  /// mono.
+  PcmAudio toMono() {
+    if (channels <= 1) return this;
+    final frames = frameCount;
+    final mono = Int16List(frames);
+    for (var i = 0; i < frames; i++) {
+      final base = i * channels;
+      var sum = 0;
+      for (var c = 0; c < channels; c++) {
+        sum += samples[base + c];
+      }
+      mono[i] = (sum / channels).round();
+    }
+    return PcmAudio(sampleRate: sampleRate, channels: 1, samples: mono);
+  }
 }
+
+/// Full-scale divisor for signed 16-bit PCM: samples run to -32768, so dividing
+/// by 32768 maps them into [-1.0, 1.0].
+const double _int16Scale = 32768.0;
 
 /// Identifies the container format of [bytes] from its leading bytes.
 ///

@@ -64,7 +64,8 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
 
 - `PcmAudio` holds the result: `sampleRate`, `channels`, and `samples` (an
   `Int16List` of samples interleaved by channel). It exposes `frameCount` and
-  `duration`.
+  `duration`, plus `toFloat32()`, `channel(int)` and `toMono()` for the
+  normalized and per-channel forms described below.
 - `decodeAudio(Uint8List)` sniffs the format and dispatches.
 - `decodeOgg(Uint8List)` and `decodeMp3(Uint8List)` decode a known format.
 - `detectFormat(Uint8List)` returns `AudioFormat.ogg`, `AudioFormat.mp3` or
@@ -79,6 +80,29 @@ Empty input throws `ArgumentError`. Bytes that are not decodable audio throw
 
 Samples are copied out of native memory before each call returns, so there is
 no native buffer for the caller to manage.
+
+## Normalized and per-channel samples
+
+`samples` is raw interleaved `Int16List`, but FFT, machine-learning and
+waveform code almost always wants floats in `[-1.0, 1.0]`, and often one
+channel at a time. `PcmAudio` provides those directly so you do not hand-roll a
+divide-by-32768 loop:
+
+```dart
+final pcm = decodeAudio(bytes);
+
+// All channels, interleaved, normalized to [-1.0, 1.0].
+final Float32List f = pcm.toFloat32();
+
+// One channel, deinterleaved and normalized. 0 is left, 1 is right.
+final Float32List left = pcm.channel(0);
+
+// Average the channels down to a single mono PcmAudio.
+final PcmAudio mono = pcm.toMono();
+```
+
+Each 16-bit sample is divided by 32768, so -32768 becomes -1.0 and 16384
+becomes 0.5. `toMono()` returns the audio unchanged when it is already mono.
 
 ## Duration without decoding
 

@@ -260,5 +260,70 @@ void main() {
       expect(audio.frameCount, 16000);
       expect(audio.duration, const Duration(seconds: 1));
     });
+
+    test('toFloat32 normalizes each sample into [-1, 1]', () {
+      final audio = PcmAudio(
+        sampleRate: 8000,
+        channels: 1,
+        samples: Int16List.fromList([0, -32768, 16384, 32767]),
+      );
+      final f = audio.toFloat32();
+      expect(f, isA<Float32List>());
+      expect(f.length, 4);
+      expect(f[0], 0.0);
+      expect(f[1], -1.0); // full-scale negative maps exactly to -1.0
+      expect(f[2], 0.5); // 16384 / 32768
+      expect(f[3], closeTo(32767 / 32768, 1e-6));
+    });
+
+    test('channel deinterleaves and normalizes one channel', () {
+      // Two frames of stereo: left = [-32768, 16384], right = [0, 32767].
+      final audio = PcmAudio(
+        sampleRate: 8000,
+        channels: 2,
+        samples: Int16List.fromList([-32768, 0, 16384, 32767]),
+      );
+      final left = audio.channel(0);
+      final right = audio.channel(1);
+      expect(left.length, 2);
+      expect(right.length, 2);
+      expect(left[0], -1.0);
+      expect(left[1], 0.5);
+      expect(right[0], 0.0);
+      expect(right[1], closeTo(32767 / 32768, 1e-6));
+    });
+
+    test('channel rejects an out-of-range index', () {
+      final audio = PcmAudio(
+        sampleRate: 8000,
+        channels: 2,
+        samples: Int16List.fromList([1, 2, 3, 4]),
+      );
+      expect(() => audio.channel(-1), throwsRangeError);
+      expect(() => audio.channel(2), throwsRangeError);
+    });
+
+    test('toMono averages the channels frame by frame', () {
+      // Frame 0: (100 + 200) / 2 = 150. Frame 1: (-1000 + 2000) / 2 = 500.
+      final audio = PcmAudio(
+        sampleRate: 8000,
+        channels: 2,
+        samples: Int16List.fromList([100, 200, -1000, 2000]),
+      );
+      final mono = audio.toMono();
+      expect(mono.channels, 1);
+      expect(mono.sampleRate, 8000);
+      expect(mono.frameCount, 2);
+      expect(mono.samples, [150, 500]);
+    });
+
+    test('toMono returns already-mono audio unchanged', () {
+      final audio = PcmAudio(
+        sampleRate: 8000,
+        channels: 1,
+        samples: Int16List.fromList([1, 2, 3]),
+      );
+      expect(identical(audio.toMono(), audio), isTrue);
+    });
   });
 }
