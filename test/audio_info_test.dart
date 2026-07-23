@@ -107,6 +107,41 @@ void main() {
       throwsA(isA<AudioDecodeException>()),
     );
   });
+
+  group('AudioInfo value equality', () {
+    // Built with runtime (non-const) constructors so the instances are
+    // distinct objects; this exercises operator == rather than the compiler's
+    // canonicalization of const instances.
+    test('instances with equal fields are equal and share a hashCode', () {
+      final a = AudioInfo(sampleRate: 44100, channels: 2, frameCount: 88200);
+      final b = AudioInfo(sampleRate: 44100, channels: 2, frameCount: 88200);
+      expect(identical(a, b), isFalse);
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+    });
+
+    test('equal instances collapse to one entry in a Set', () {
+      final a = AudioInfo(sampleRate: 48000, channels: 1, frameCount: 24000);
+      final b = AudioInfo(sampleRate: 48000, channels: 1, frameCount: 24000);
+      expect({a, b}, hasLength(1));
+    });
+
+    test('a difference in any single field breaks equality', () {
+      final base = AudioInfo(sampleRate: 44100, channels: 2, frameCount: 88200);
+      expect(
+        base,
+        isNot(AudioInfo(sampleRate: 48000, channels: 2, frameCount: 88200)),
+      );
+      expect(
+        base,
+        isNot(AudioInfo(sampleRate: 44100, channels: 1, frameCount: 88200)),
+      );
+      expect(
+        base,
+        isNot(AudioInfo(sampleRate: 44100, channels: 2, frameCount: 44100)),
+      );
+    });
+  });
 }
 
 /// The lookup table for the Ogg page checksum: a non-reflected CRC-32,

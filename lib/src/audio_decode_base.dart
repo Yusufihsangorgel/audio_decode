@@ -237,6 +237,16 @@ class AudioInfo {
       : Duration(microseconds: (frameCount * 1000000) ~/ sampleRate);
 
   @override
+  bool operator ==(Object other) =>
+      other is AudioInfo &&
+      sampleRate == other.sampleRate &&
+      channels == other.channels &&
+      frameCount == other.frameCount;
+
+  @override
+  int get hashCode => Object.hash(sampleRate, channels, frameCount);
+
+  @override
   String toString() =>
       'AudioInfo($sampleRate Hz, $channels ch, $frameCount frames, $duration)';
 }

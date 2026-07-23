@@ -1,3 +1,15 @@
+## 0.4.0
+
+- Add value equality to `AudioInfo`. It now overrides `==` and `hashCode` over
+  its `sampleRate`, `channels` and `frameCount` fields, so two values with the
+  same geometry compare equal, share a `hashCode`, deduplicate in a `Set` and
+  work as `Map` keys. This lands before the 1.0.0 freeze: giving a released
+  value type value equality afterwards would change how existing `==`,
+  `Set` and `Map` uses behave, which would be a breaking change. `PcmAudio`
+  keeps identity equality by design, since its `samples` buffer is large and
+  mutable and a structural `==` would scan every sample and rehash whenever the
+  buffer is written. No existing fields or methods change.
+
 ## 0.3.2
 
 - Fix the int32 overflow from 0.3.1 on the Ogg Vorbis path as well.
