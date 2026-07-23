@@ -71,4 +71,21 @@ void main() {
     const info = AudioInfo(sampleRate: 0, channels: 1, frameCount: 100);
     expect(info.duration, Duration.zero);
   });
+
+  test(
+    'a per-channel sample count beyond int32 range is rejected, not wrapped',
+    () {
+      final unit = fixture('sine_44100_mono_1s.mp3');
+      // Concatenating the one-second clip enough times pushes the total
+      // per-channel sample count past 2,147,483,647 (2^31 - 1), the point
+      // where the native int32 out-parameter would otherwise wrap to a
+      // negative value instead of holding the true count.
+      const repeats = 48000;
+      final huge = Uint8List(unit.length * repeats);
+      for (var i = 0; i < repeats; i++) {
+        huge.setRange(i * unit.length, (i + 1) * unit.length, unit);
+      }
+      expect(() => mp3Info(huge), throwsA(isA<AudioDecodeException>()));
+    },
+  );
 }

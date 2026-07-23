@@ -1,3 +1,16 @@
+## 0.3.1
+
+- Fix an int32 overflow: the MP3 decoder accumulated the per-channel sample
+  count in a native `size_t` but narrowed it into the caller's `int` out
+  parameter with no overflow check. A stream whose per-channel sample count
+  passed 2^31 (about 13.5 hours at 44.1 kHz) wrapped to a negative value,
+  which `mp3Info`/`audioInfo` surfaced as a negative `frameCount` and
+  `duration` with no error, and which `decodeMp3` could turn into an unfreed
+  native buffer surfaced as an unrelated `ArgumentError`. Both paths now
+  reject the overflow explicitly (`AudioDecodeException`) instead of
+  wrapping, and `_decode` frees the native buffer in a `finally` even if the
+  copy into Dart memory throws.
+
 ## 0.3.0
 
 - Add `PcmAudio.toFloat32()`, `PcmAudio.channel(int)` and `PcmAudio.toMono()`.

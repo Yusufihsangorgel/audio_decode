@@ -12,6 +12,7 @@
 #endif
 #endif
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -97,9 +98,17 @@ AD_EXPORT int ad_decode_mp3(const unsigned char* bytes, int len, int* channels,
     return 1;
   }
 
+  const size_t samples_per_channel = count / (size_t)stream_channels;
+  if (samples_per_channel > (size_t)INT_MAX) {
+    // Narrowing to the caller's int* would wrap; report failure instead of a
+    // silently corrupt sample count.
+    free(buffer);
+    return 1;
+  }
+
   *channels = stream_channels;
   *rate = stream_rate;
-  *totalSamplesPerChannel = (int)(count / (size_t)stream_channels);
+  *totalSamplesPerChannel = (int)samples_per_channel;
   *out = buffer;
   return 0;
 }
@@ -142,6 +151,11 @@ AD_EXPORT int ad_info_mp3(const unsigned char* bytes, int len, int* channels,
   }
 
   if (stream_channels <= 0) {
+    return 1;
+  }
+  if (samples_per_channel > (size_t)INT_MAX) {
+    // Narrowing to the caller's int* would wrap; report failure instead of a
+    // silently corrupt sample count.
     return 1;
   }
   *channels = stream_channels;

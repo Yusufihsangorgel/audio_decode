@@ -355,6 +355,7 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
   final outRate = malloc<Int>();
   final outSamplesPerChannel = malloc<Int>();
   final outSamples = malloc<Pointer<Int16>>();
+  Pointer<Int16>? nativeSamples;
   try {
     dataPtr.asTypedList(bytes.length).setAll(0, bytes);
     final rc = decode(
@@ -371,12 +372,13 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
     final channels = outChannels.value;
     final rate = outRate.value;
     final samplesPerChannel = outSamplesPerChannel.value;
-    final nativeSamples = outSamples.value;
+    nativeSamples = outSamples.value;
     final total = channels * samplesPerChannel;
     // Copy out of native memory before freeing it; callers never see a native
     // pointer.
     final samples = Int16List.fromList(nativeSamples.asTypedList(total));
     adFree(nativeSamples);
+    nativeSamples = null;
     return PcmAudio(sampleRate: rate, channels: channels, samples: samples);
   } finally {
     malloc.free(dataPtr);
@@ -384,6 +386,11 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
     malloc.free(outRate);
     malloc.free(outSamplesPerChannel);
     malloc.free(outSamples);
+    // Catches a native buffer that was allocated but never reached adFree(),
+    // for example because copying it out threw.
+    if (nativeSamples != null) {
+      adFree(nativeSamples);
+    }
   }
 }
 
