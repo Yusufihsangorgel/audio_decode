@@ -1,10 +1,13 @@
 // Compares decoding in-process against shelling out to ffmpeg.
 //
 // Shelling out is the usual way to get PCM out of an encoded file from Dart,
-// so this measures the choice a reader actually faces. Both paths produce the
-// same interleaved 16-bit samples, and the bench checks that they do before
-// reporting any timing. The ffmpeg column includes process startup, because
-// that cost is paid once per file and is most of what the comparison is about.
+// so this measures the choice a reader actually faces. Before reporting any
+// timing the bench checks that both paths decoded the same amount of audio,
+// counted in frames: the sample values themselves differ by about one LSB on
+// roughly half the samples, because stb_vorbis and ffmpeg are two different
+// Vorbis decoders and floating-point synthesis has no single last-bit answer.
+// The ffmpeg column includes process startup, because that cost is paid once
+// per file and is most of what the comparison is about.
 //
 // Requires ffmpeg on the PATH. Usage: dart run bench/vs_ffmpeg.dart
 import 'dart:io';
@@ -92,7 +95,7 @@ void main() {
     );
     print('');
     print(
-      'Both columns produce the same PCM. The gap is not the codec: it is '
+      'Both columns decode the same audio. The gap is not the codec: it is '
       'the process. Spawning ffmpeg costs those tens of milliseconds whether '
       'the clip is one second or thirty, which is why the ratio shrinks as '
       'the clip grows.',
