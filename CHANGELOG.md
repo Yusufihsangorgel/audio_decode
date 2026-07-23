@@ -1,3 +1,30 @@
+## 0.5.0
+
+Two things that had to be settled before a 1.0.0 freezes them.
+
+- **Correct a false claim.** Every release up to 0.4.1 said this package
+  "decodes the same bytes to the same samples on every platform", and the
+  library documentation said it "decodes deterministically across platforms".
+  That is not true, and it was never true. Compiling this package's own C for
+  arm64 and for x86-64 with the same clang and the same flags and decoding the
+  six test fixtures, five of them come out with different samples: about 0.03%
+  of samples differ, always by one least-significant bit. Both decoders work in
+  floating point and a compiler may fuse a multiply and an add on one
+  architecture and not on another, which moves the last rounding. What is true,
+  and is what the documentation now says, is that decoding is deterministic for
+  a given build and that the reported geometry (channels, sample rate, frame
+  count) matches everywhere. The practical consequence is narrow but real: a
+  checksum of decoded PCM does not survive a move between architectures. The
+  reason this went unnoticed is that the test suite runs on three operating
+  systems but each runner only ever compares against itself.
+- **Mark `PcmAudio`, `AudioInfo` and `AudioDecodeException` as `final`.** They
+  are leaf types: none of them is designed to be extended or implemented, and
+  nothing needs to. Sealing them now is what makes the rest of 1.x safe, since
+  adding a method to an open class breaks anyone who implemented it, and
+  `AudioInfo`'s `==` would otherwise be open to an asymmetric subclass. This is
+  the breaking part of this release: `final` cannot be added after 1.0.0
+  without a 2.0.0, while removing it later would not break anyone.
+
 ## 0.4.1
 
 - Answer the question the README kept skipping: why decode in process rather

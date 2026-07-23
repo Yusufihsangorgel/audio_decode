@@ -10,9 +10,18 @@ self-contained: no platform plugins, no bundled binary, and no system library to
 install beyond a C toolchain.
 
 The same code path runs in pure Dart (command-line tools, servers, tests) and
-in Flutter, and it decodes the same bytes to the same samples on every
-platform. That makes it a good fit for waveform rendering, audio analysis,
+in Flutter. That makes it a good fit for waveform rendering, audio analysis,
 resampling, machine-learning preprocessing, servers and games.
+
+Decoding is deterministic for a given build: the same bytes decode to the same
+samples every time, and the geometry (channel count, sample rate, frame count)
+is the same everywhere. Sample values are not bit-identical across CPU
+architectures, though. Both decoders compute in floating point, and a compiler
+is free to fuse a multiply and an add on arm64 where it does not on baseline
+x86-64, so the last rounding can land differently. Measured across this
+package's own fixtures, that is around 0.03% of samples differing by one
+least-significant bit: inaudible, but enough that a checksum of decoded PCM
+will not match across a mixed-architecture fleet.
 
 It is built on two well-known public-domain single-file libraries:
 

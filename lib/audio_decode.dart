@@ -5,8 +5,13 @@
 /// no prebuilt binary to ship and no platform plugin or system library to
 /// install beyond a C toolchain. Decoding runs in native code and copies the
 /// result into a Dart [Int16List], so callers never manage native memory. The
-/// same code path runs in pure Dart (CLI, servers, tests) and in Flutter, and
-/// decodes deterministically across platforms.
+/// same code path runs in pure Dart (CLI, servers, tests) and in Flutter.
+///
+/// Decoding is deterministic for a given build, and the geometry it reports is
+/// the same everywhere. Sample values are not bit-identical across CPU
+/// architectures: the decoders compute in floating point, so around 0.03% of
+/// samples can differ by one least-significant bit between arm64 and x86-64.
+/// Do not compare checksums of decoded PCM across a mixed fleet.
 ///
 /// This is a decoder, not a player: it turns encoded bytes into PCM samples
 /// for waveforms, analysis, resampling, machine-learning preprocessing, games

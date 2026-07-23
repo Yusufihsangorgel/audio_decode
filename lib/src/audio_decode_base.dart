@@ -23,7 +23,7 @@ enum AudioFormat {
 ///
 /// [ArgumentError] is used instead for programming errors such as empty input;
 /// this exception is reserved for bad or corrupt data.
-class AudioDecodeException implements Exception {
+final class AudioDecodeException implements Exception {
   /// Creates an exception with a human-readable [message].
   AudioDecodeException(this.message);
 
@@ -41,7 +41,7 @@ class AudioDecodeException implements Exception {
 /// the order is left, right, left, right and so on. A single audio frame is one
 /// sample per channel; [frameCount] is the number of frames and [duration] is
 /// how long they play at [sampleRate].
-class PcmAudio {
+final class PcmAudio {
   /// Creates a [PcmAudio] from its geometry and interleaved [samples].
   ///
   /// [samples.length] must be a whole multiple of [channels]; the decoders in
@@ -214,7 +214,7 @@ PcmAudio decodeAudio(Uint8List bytes) {
 /// playlist, validating an upload's duration, or picking which files to
 /// process. Decoding a whole album to PCM just to display its running time
 /// costs orders of magnitude more memory than the answer is worth.
-class AudioInfo {
+final class AudioInfo {
   /// Creates an [AudioInfo]; normally you get one from [audioInfo].
   const AudioInfo({
     required this.sampleRate,
