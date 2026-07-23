@@ -395,13 +395,7 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
 }
 
 typedef _InfoFn =
-    int Function(
-      Pointer<Uint8>,
-      int,
-      Pointer<Int>,
-      Pointer<Int>,
-      Pointer<Int>,
-    );
+    int Function(Pointer<Uint8>, int, Pointer<Int>, Pointer<Int>, Pointer<Int>);
 
 AudioInfo _info(Uint8List bytes, _InfoFn readInfo, String formatName) {
   _checkNotEmpty(bytes);
@@ -412,13 +406,7 @@ AudioInfo _info(Uint8List bytes, _InfoFn readInfo, String formatName) {
   final outFrames = malloc<Int>();
   try {
     dataPtr.asTypedList(bytes.length).setAll(0, bytes);
-    final rc = readInfo(
-      dataPtr,
-      bytes.length,
-      outChannels,
-      outRate,
-      outFrames,
-    );
+    final rc = readInfo(dataPtr, bytes.length, outChannels, outRate, outFrames);
     if (rc != 0) {
       throw AudioDecodeException('not a readable $formatName stream');
     }
