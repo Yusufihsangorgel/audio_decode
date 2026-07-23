@@ -1,3 +1,14 @@
+## 0.3.2
+
+- Fix the int32 overflow from 0.3.1 on the Ogg Vorbis path as well.
+  `ad_info_vorbis` read the stream length from the final page's granule
+  position as an `unsigned int` and narrowed it into the caller's `int` out
+  parameter with no range check, so a stream whose granule passed 2^31 (about
+  13.5 hours at 44.1 kHz) wrapped to a negative value that `oggInfo` and
+  `audioInfo` surfaced as a negative `frameCount` and `duration` with no error.
+  The Vorbis info path now rejects the overflow with an `AudioDecodeException`,
+  the same guard the MP3 path already carried.
+
 ## 0.3.1
 
 - Fix an int32 overflow: the MP3 decoder accumulated the per-channel sample

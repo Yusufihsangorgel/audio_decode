@@ -88,4 +88,94 @@ void main() {
       expect(() => mp3Info(huge), throwsA(isA<AudioDecodeException>()));
     },
   );
+
+  test('a Vorbis granule beyond int32 range is rejected, not wrapped', () {
+    final ogg = fixture('sine_44100_mono_1s.ogg');
+
+    // Control: rewriting the final page's granule to a value that fits in
+    // int32 and repairing the page checksum reads back as exactly that value.
+    // This proves the crafting below is faithful, so the rejection is the
+    // overflow guard firing rather than a corrupt page the decoder refused.
+    expect(oggInfo(_withEosGranule(ogg, 1000)).frameCount, 1000);
+
+    // Vorbis carries the stream length in the final page's granule position.
+    // A granule of 2^31 is one past the int32 range (2,147,483,647), so
+    // narrowing it into the native int out-parameter would wrap to a negative
+    // frame count instead of holding the true length.
+    expect(
+      () => oggInfo(_withEosGranule(ogg, 1 << 31)),
+      throwsA(isA<AudioDecodeException>()),
+    );
+  });
+}
+
+/// The lookup table for the Ogg page checksum: a non-reflected CRC-32,
+/// polynomial 0x04c11db7 with a zero initial value. This mirrors crc32_init in
+/// the vendored stb_vorbis, whose `vorbis_find_page` rejects any page whose
+/// stored checksum does not match, so a page whose granule has been rewritten
+/// has to carry a recomputed one.
+final Uint32List _oggCrcTable = () {
+  final table = Uint32List(256);
+  for (var i = 0; i < 256; i++) {
+    var crc = (i << 24) & 0xFFFFFFFF;
+    for (var bit = 0; bit < 8; bit++) {
+      final topSet = crc & 0x80000000 != 0;
+      crc = ((crc << 1) & 0xFFFFFFFF) ^ (topSet ? 0x04c11db7 : 0);
+    }
+    table[i] = crc;
+  }
+  return table;
+}();
+
+/// The Ogg page checksum over [page], computed with its checksum field held at
+/// zero, matching stb_vorbis's `crc32_update`.
+int _oggPageCrc(Uint8List page) {
+  var crc = 0;
+  for (final byte in page) {
+    crc =
+        ((crc << 8) & 0xFFFFFFFF) ^ _oggCrcTable[(byte ^ (crc >>> 24)) & 0xFF];
+  }
+  return crc;
+}
+
+/// The byte range `[start, end)` of the stream's end-of-stream page, the last
+/// page, identified by the 0x04 bit in its header type. Ogg pages are
+/// self-describing: a 27-byte header, then one length byte per segment, then
+/// the segment bodies.
+(int, int) _eosPageRange(Uint8List bytes) {
+  var offset = 0;
+  while (offset + 27 <= bytes.length) {
+    final headerType = bytes[offset + 5];
+    final segmentCount = bytes[offset + 26];
+    var bodySize = 0;
+    for (var i = 0; i < segmentCount; i++) {
+      bodySize += bytes[offset + 27 + i];
+    }
+    final pageSize = 27 + segmentCount + bodySize;
+    if (headerType & 0x04 != 0) return (offset, offset + pageSize);
+    offset += pageSize;
+  }
+  throw StateError('no end-of-stream page');
+}
+
+/// A copy of [bytes] whose end-of-stream page carries [granule] as its absolute
+/// granule position, eight little-endian bytes at page offset 6, with the page
+/// checksum recomputed so the decoder accepts it. stb_vorbis reads this granule
+/// as the stream length.
+Uint8List _withEosGranule(Uint8List bytes, int granule) {
+  final crafted = Uint8List.fromList(bytes);
+  final (start, end) = _eosPageRange(crafted);
+  for (var i = 0; i < 8; i++) {
+    crafted[start + 6 + i] = (granule >>> (8 * i)) & 0xFF;
+  }
+  // Zero the four-byte checksum field at page offset 22, then fill it with the
+  // checksum of the whole page.
+  for (var i = 0; i < 4; i++) {
+    crafted[start + 22 + i] = 0;
+  }
+  final crc = _oggPageCrc(Uint8List.sublistView(crafted, start, end));
+  for (var i = 0; i < 4; i++) {
+    crafted[start + 22 + i] = (crc >>> (8 * i)) & 0xFF;
+  }
+  return crafted;
 }

@@ -20,6 +20,7 @@
 #endif
 #endif
 
+#include <limits.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,6 +99,12 @@ AD_EXPORT int ad_info_vorbis(const unsigned char* bytes, int len, int* channels,
   const stb_vorbis_info info = stb_vorbis_get_info(handle);
   const unsigned int samples = stb_vorbis_stream_length_in_samples(handle);
   stb_vorbis_close(handle);
+
+  if (samples > (unsigned int)INT_MAX) {
+    // Narrowing to the caller's int* would wrap; report failure instead of a
+    // silently corrupt sample count.
+    return 1;
+  }
 
   *channels = info.channels;
   *rate = (int)info.sample_rate;
