@@ -1,3 +1,21 @@
+## 0.4.1
+
+- Answer the question the README kept skipping: why decode in process rather
+  than run `ffmpeg`. `bench/vs_ffmpeg.dart` measures both paths on the same
+  file at four clip lengths, and the README now carries the result. The point
+  is not that the codec is faster. Starting ffmpeg costs about 24.8 ms on an
+  Apple M-series laptop before it decodes anything, measured by giving it a
+  0.05-second clip where there is nothing to decode, and that cost is paid per
+  file: at one second of audio, 98% of the subprocess time is not decoding. The
+  decoding is in the same class either way, about 15.7 ms against 12.9 ms over
+  thirty seconds.
+- The bench compares the two decoders' output before it reports any timing, so
+  a timing number cannot come from decoding less audio. Running it turned up
+  one real difference, which it now reports rather than hiding: on a
+  one-second clip ffmpeg's raw PCM pipe stops 128 frames early, while this
+  package returns the full 44100 frames the container declares. The two agree
+  exactly at five, fifteen and thirty seconds.
+
 ## 0.4.0
 
 - Add value equality to `AudioInfo`. It now overrides `==` and `hashCode` over

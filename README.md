@@ -139,15 +139,33 @@ decoded MP3 is usually a little longer than the original audio, on the order of
 a thousand samples per channel. Ogg Vorbis decodes to a length very close to
 the source. If you need exact-length output, trim to the duration you expect.
 
-## Performance
+## Performance, or: why not just run ffmpeg?
 
-Decoding runs entirely in native code. On an Apple M-series laptop, a
-30-second stereo 44100 Hz Ogg Vorbis tone (2.6M interleaved samples) decodes in
-about 12 ms median, roughly 215 million samples per second. Run
-`dart run bench/bench.dart` to measure on your machine; it generates the clip
-with ffmpeg if ffmpeg is installed and otherwise decodes the committed
-one-second fixture. These are synthetic-tone numbers; a dense music track
-decodes more slowly.
+Shelling out to `ffmpeg` is the usual way to get PCM out of an encoded file
+from Dart, and for an offline batch job it is a perfectly good answer. The
+reason to decode in process is not that the codec here is faster. It is that
+starting a process is not free, and you pay that cost once per file.
+
+![Decoding the same Ogg file in process and by spawning ffmpeg. Every ffmpeg bar starts with the same 24.8 ms block of process startup, so at one second of audio almost none of the time is spent decoding](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/benchmark.png)
+
+On an Apple M-series laptop, ffmpeg takes about 24.8 ms before it has decoded a
+single sample. That figure is measured, not inferred: hand it a 0.05-second
+clip, where there is essentially nothing to decode, and 24.8 ms is what is
+left. It does not shrink for a short file, so decoding a one-second clip
+through a subprocess spends 98% of its time not decoding.
+
+The decoding itself is in the same class either way. Over thirty seconds of
+audio ffmpeg spends about 15.7 ms on the samples, against 12.9 ms here. So the
+difference is per file rather than per sample: a thousand short clips cost
+about 25 seconds of process startup that in-process decoding never pays, while
+one long file is close to a wash.
+
+`dart run bench/vs_ffmpeg.dart` reproduces the chart on your machine. It checks
+that both paths decode to the same samples before it reports any timing, so a
+number that looks too good has to survive that first. `dart run bench/bench.dart`
+measures absolute throughput instead: the 30-second stereo 44100 Hz clip above
+is 2.6M interleaved samples, or about 205 million samples per second. These are
+synthetic-tone numbers; a dense music track decodes more slowly.
 
 ## Platforms
 
