@@ -1,3 +1,10 @@
+## 0.5.1
+
+- Add `example/README.md` for pub.dev's Example tab (it was empty). It walks
+  through the command-line example — detect the format, decode to PCM, print an
+  ASCII waveform, write a WAV — with the real output against the repo's sine
+  fixture. Docs only.
+
 ## 0.5.0
 
 Two things that had to be settled before a 1.0.0 freezes them.
