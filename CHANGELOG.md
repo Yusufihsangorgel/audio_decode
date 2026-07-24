@@ -1,3 +1,30 @@
+## 1.0.0
+
+The API is stable. No behaviour changes; this freezes the surface after an
+adversarial pass over the FFI boundary, and documents one thing that pass turned
+up.
+
+- **Documented what a truncated file does, which differs by format.** The README
+  said undecodable bytes throw, which is true, but a cut-off file is a separate
+  case. Ogg is a checksummed container, so a truncated one throws. MP3 is a bare
+  frame sequence carrying no total length, so a truncated one is
+  indistinguishable from a shorter recording: it decodes the frames that arrived
+  and returns them silently — measured, a third of a file decodes to about a
+  third of the audio. Nothing can detect that from the bytes, so the README now
+  says to check `PcmAudio.duration` against what you expected when the input may
+  be a partial download.
+
+Verified by execution and now covered by `test/native_safety_test.dart`: empty
+input raises `ArgumentError` and garbage raises `AudioDecodeException`; a
+truncated Ogg throws while a truncated MP3 returns fewer frames at the same
+sample rate; repeated decode/encode does not leak (growth across batches
+flattens instead of staying linear, which is the shape a leak would have);
+`encodeWav` writes exactly a 44-byte header plus the samples; and `toMono`
+leaves already-mono audio unchanged.
+
+`native_toolchain_c` is pre-1.0 but is a build-time dependency and does not
+reach the public API frozen here.
+
 ## 0.5.1
 
 - Add `example/README.md` for pub.dev's Example tab (it was empty). It walks

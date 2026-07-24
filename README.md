@@ -87,6 +87,16 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
 Empty input throws `ArgumentError`. Bytes that are not decodable audio throw
 `AudioDecodeException`.
 
+A *truncated* file is a different case, and the two formats differ. Ogg is a
+container with per-page checksums, so a cut-off file fails and throws. MP3 is a
+bare sequence of frames with no length anywhere in it, so a cut-off file is
+indistinguishable from a shorter recording: it decodes the frames that arrived
+and returns them without complaint — a file truncated to a third of its length
+decodes to roughly a third of the audio. Nothing can detect that from the bytes
+alone, so if you are decoding something that may be incomplete (a partial
+download, a stream you cut), check the length you expected against
+`PcmAudio.duration` rather than relying on an exception.
+
 Samples are copied out of native memory before each call returns, so there is
 no native buffer for the caller to manage.
 
