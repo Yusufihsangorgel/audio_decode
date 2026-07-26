@@ -1,3 +1,49 @@
+## 1.0.1
+
+Two bugs found by exercising the package against its own pub.dev description on
+a real device and a real file sweep, rather than against its own tests.
+
+### Android crashed at runtime, and the build was green
+
+`flutter build apk` succeeded for all three ABIs, and then on device:
+
+```
+dlopen failed: cannot locate symbol "log" referenced by libaudio_decode.so
+```
+
+stb_vorbis and minimp3 call `log`, `pow`, `sin`, `exp` and `ldexp`. Android
+keeps those in a separate `libm`, and its linker will not resolve a symbol from
+a library that is not in `DT_NEEDED`. The build hook never linked it, so the
+shipped `.so` listed only `libdl.so` and `libc.so`.
+
+Every other target hid the omission: macOS and iOS get math from `libSystem`,
+and glibc 2.34 folded `libm` into `libc`. Android was the one platform where it
+was fatal, and the one platform a Dart `test/` directory cannot reach.
+
+`hook/build.dart` now links `m` on Android and Linux. Verified by reading
+`DT_NEEDED` out of the built `.so`: it was `[libdl.so, libc.so]` and is now
+`[libm.so, libdl.so, libc.so]`.
+
+If you shipped 1.0.0 to Android, it did not work. Sorry.
+
+### A truncated file could decode to nothing and report success
+
+Truncating an Ogg part way through its first audio page returned a `PcmAudio`
+with `frameCount == 0` and threw nothing. Any caller validating an upload by
+catching an exception accepted a file that produced no audio at all. A decode
+that yields no frames now throws `AudioDecodeException`.
+
+The README's claim that truncated Ogg files "fail and throw" was also wrong,
+and is corrected rather than defended. Measured behaviour: a cut inside the
+header throws, a cut after the header decodes what arrived and returns it, and
+a cut yielding nothing now throws. Detecting a missing tail needs the
+end-of-stream page flag, which this package does not check yet, and the README
+now says so.
+
+New `test/truncation_test.dart` sweeps truncation points instead of pinning one
+percentage, because which offset produces the empty decode depends on where the
+page boundaries fall. Confirmed red before the fix and green after.
+
 ## 1.0.0
 
 The API is stable. No behaviour changes; this freezes the surface after an

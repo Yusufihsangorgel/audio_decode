@@ -87,15 +87,27 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
 Empty input throws `ArgumentError`. Bytes that are not decodable audio throw
 `AudioDecodeException`.
 
-A *truncated* file is a different case, and the two formats differ. Ogg is a
-container with per-page checksums, so a cut-off file fails and throws. MP3 is a
-bare sequence of frames with no length anywhere in it, so a cut-off file is
-indistinguishable from a shorter recording: it decodes the frames that arrived
-and returns them without complaint — a file truncated to a third of its length
-decodes to roughly a third of the audio. Nothing can detect that from the bytes
-alone, so if you are decoding something that may be incomplete (a partial
-download, a stream you cut), check the length you expected against
-`PcmAudio.duration` rather than relying on an exception.
+A *truncated* file mostly does not throw, in either format, and an earlier
+version of this section claimed otherwise. Measured across a sweep of
+truncation points on a committed fixture:
+
+- **Cut inside the header:** throws `AudioDecodeException`. Ogg gets this far
+  because the header pages fail their checksum; there is nothing to decode.
+- **Cut after the header:** decodes the audio that arrived and returns it, no
+  exception. Ogg has per-page checksums, but the pages that did arrive are
+  intact, so nothing is detectably wrong. Detecting the missing tail needs the
+  end-of-stream page flag, which this package does not check yet.
+- **Cut that yields no frames at all:** throws, since 1.0.1. This used to
+  return success with `frameCount == 0`, which meant an upload check that only
+  looked for an exception accepted a file containing no audio.
+
+MP3 is worse by construction: a bare sequence of frames with no length anywhere
+in it, so a cut-off file is indistinguishable from a shorter recording. A file
+truncated to a third of its length decodes to roughly a third of the audio.
+
+So if you are decoding something that may be incomplete, a partial download or
+a stream you cut, compare the duration you expected against `PcmAudio.duration`.
+Do not rely on an exception.
 
 Samples are copied out of native memory before each call returns, so there is
 no native buffer for the caller to manage.

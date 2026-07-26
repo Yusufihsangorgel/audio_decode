@@ -382,6 +382,20 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
     final channels = outChannels.value;
     final rate = outRate.value;
     final samplesPerChannel = outSamplesPerChannel.value;
+    if (samplesPerChannel <= 0 || channels <= 0 || rate <= 0) {
+      // A stream whose header parses but which yields nothing. Truncating an
+      // Ogg file part way through its first audio page lands here: the decoder
+      // reports success and zero frames, and every caller then works with an
+      // empty result it never checked for. There is no input for which an
+      // empty decode is a useful answer, so it is an error.
+      nativeSamples = outSamples.value;
+      if (nativeSamples != nullptr) adFree(nativeSamples);
+      nativeSamples = null;
+      throw AudioDecodeException(
+        'decoded no audio from this $formatName stream; it is empty or '
+        'truncated before the first complete audio frame',
+      );
+    }
     nativeSamples = outSamples.value;
     final total = channels * samplesPerChannel;
     // Copy out of native memory before freeing it; callers never see a native
