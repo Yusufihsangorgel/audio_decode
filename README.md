@@ -203,7 +203,7 @@ synthetic-tone numbers; a dense music track decodes more slowly.
 The build hook compiles the vendored C with the toolchain that
 `package:native_toolchain_c` drives (clang, gcc or MSVC). It targets the
 platforms Dart's native build hooks support: Linux, macOS and Windows on the
-Dart VM today, and Flutter as build-hook support there stabilises. Dart 3.9 or
+Dart VM today, and Flutter as build-hook support there stabilises. Dart 3.10 or
 newer is required.
 
 ## Credits and license
