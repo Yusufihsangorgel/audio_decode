@@ -1,6 +1,8 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'wav_decoder.dart';
+
 import 'package:ffi/ffi.dart';
 
 import 'bindings.dart';
@@ -13,6 +15,9 @@ enum AudioFormat {
 
   /// MPEG audio (MP3), decoded by [decodeMp3].
   mp3,
+
+  /// Uncompressed RIFF/WAVE, decoded by [decodeWav].
+  wav,
 
   /// Not a format this package recognises.
   unknown,
@@ -137,6 +142,18 @@ const double _int16Scale = 32768.0;
 /// top three bits are set). Anything else is [AudioFormat.unknown]. This reads
 /// only a handful of bytes and never throws.
 AudioFormat detectFormat(Uint8List bytes) {
+  if (bytes.length >= 12 &&
+      bytes[0] == 0x52 && // 'R'
+      bytes[1] == 0x49 && // 'I'
+      bytes[2] == 0x46 && // 'F'
+      bytes[3] == 0x46 && // 'F'
+      bytes[8] == 0x57 && // 'W'
+      bytes[9] == 0x41 && // 'A'
+      bytes[10] == 0x56 && // 'V'
+      bytes[11] == 0x45) {
+    // 'E' — the RIFF tag alone is not enough; AVI and others share it.
+    return AudioFormat.wav;
+  }
   if (bytes.length >= 4 &&
       bytes[0] == 0x4F && // 'O'
       bytes[1] == 0x67 && // 'g'
@@ -202,6 +219,8 @@ PcmAudio decodeAudio(Uint8List bytes) {
       return decodeOgg(bytes);
     case AudioFormat.mp3:
       return decodeMp3(bytes);
+    case AudioFormat.wav:
+      return decodeWav(bytes);
     case AudioFormat.unknown:
       throw AudioDecodeException('unrecognized audio format');
   }
@@ -288,6 +307,8 @@ AudioInfo audioInfo(Uint8List bytes) {
       return oggInfo(bytes);
     case AudioFormat.mp3:
       return mp3Info(bytes);
+    case AudioFormat.wav:
+      return wavInfo(bytes);
     case AudioFormat.unknown:
       throw AudioDecodeException('unrecognized audio format');
   }

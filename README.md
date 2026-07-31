@@ -4,7 +4,7 @@
 
 ![Compressed bytes are decoded to PCM samples](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/architecture.png)
 
-Native Ogg Vorbis and MP3 decoding to raw PCM for Dart, over FFI. The C
+Native Ogg Vorbis and MP3 decoding to raw PCM for Dart, over FFI, plus WAV in pure Dart. The C
 decoders are compiled from source by a Dart build hook, so the package is
 self-contained: no platform plugins, no bundled binary, and no system library to
 install beyond a C toolchain.
@@ -38,7 +38,9 @@ playback, use a player package such as
 
 Scope:
 
-- Decodes Ogg Vorbis and MP3 to interleaved signed 16-bit PCM.
+- Decodes Ogg Vorbis, MP3 and uncompressed WAV to interleaved signed 16-bit
+  PCM. WAV needs no native code and covers 8/16/24/32-bit integer and IEEE
+  float, so `encodeWav` output reads straight back.
 - Encodes PCM back to a 16-bit WAV file (`encodeWav`), so decoded audio can be
   saved or handed to other tools.
 - No encoding to Vorbis or MP3, and no other container or codec.
@@ -52,7 +54,7 @@ import 'package:audio_decode/audio_decode.dart';
 void main() {
   final bytes = File('clip.mp3').readAsBytesSync();
 
-  // Auto-detects Ogg Vorbis vs MP3 from the bytes.
+  // Auto-detects Ogg Vorbis, MP3 or WAV from the bytes.
   final pcm = decodeAudio(bytes);
   print('${pcm.sampleRate} Hz, ${pcm.channels} ch, ${pcm.duration}');
   print('${pcm.frameCount} frames, ${pcm.samples.length} interleaved samples');

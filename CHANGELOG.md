@@ -1,3 +1,26 @@
+## 1.1.0
+
+- **Read WAV, so the package can open what `encodeWav` writes.** `encodeWav`
+  has been here since the start, but `detectFormat` did not know the RIFF
+  signature: feed its own output back to `decodeAudio` and it threw
+  "unrecognized audio format". Anyone walking a directory of mixed audio hit
+  the same wall on the one format that needs no decoder at all.
+
+  `decodeWav` and `wavInfo` are pure Dart — a WAV file is a header and the
+  samples — and handle integer PCM at 8, 16, 24 and 32 bits plus IEEE float at
+  32 and 64, converting each to the signed 16-bit samples `PcmAudio` carries.
+  8-bit is unsigned and centred on 128, unlike every other width, and float is
+  clamped so an overshooting recording or a NaN from a broken encoder cannot
+  wrap into a loud opposite-sign sample. `detectFormat` returns
+  `AudioFormat.wav`, and `decodeAudio` and `audioInfo` dispatch to them.
+
+  `wavInfo` reads the frame count from the size of the data chunk rather than
+  by counting, so it costs the same on a four-second clip and a four-hour one.
+
+  A compressed payload in a RIFF wrapper — ADPCM, µ-law, an MP3 inside a WAV —
+  is named in the error rather than decoded as noise. The big-endian RIFX
+  variant is not read.
+
 ## 1.0.2
 
 - **Declare the SDK this package can actually resolve on.** The constraint read
