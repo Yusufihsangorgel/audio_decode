@@ -4,21 +4,31 @@
 //   dart run example/audio_decode_example.dart input.mp3 [output.wav]
 //
 // The input may be Ogg Vorbis or MP3; the format is detected from its bytes.
+// With no argument it decodes a test tone that ships with the package, so the
+// example runs before you have gone looking for an audio file.
 import 'dart:io';
 
 import 'package:audio_decode/audio_decode.dart';
 
+/// A one-second stereo Ogg Vorbis tone from the test fixtures.
+const _sampleInput = 'test/fixtures/sine_44100_stereo_1s.ogg';
+
 void main(List<String> args) {
+  final input = args.isEmpty ? _sampleInput : args[0];
   if (args.isEmpty) {
-    stderr.writeln(
-      'usage: dart run example/audio_decode_example.dart '
-      'input.(ogg|mp3) [output.wav]',
-    );
-    exitCode = 64; // EX_USAGE
-    return;
+    if (!File(input).existsSync()) {
+      stderr.writeln(
+        'usage: dart run example/audio_decode_example.dart '
+        'input.(ogg|mp3) [output.wav]\n'
+        '($input is missing, so there is nothing to fall back to)',
+      );
+      exitCode = 64; // EX_USAGE
+      return;
+    }
+    print('No input given, decoding $input.');
+    print('It is a steady sine, so expect a flat waveform below.\n');
   }
 
-  final input = args[0];
   final bytes = File(input).readAsBytesSync();
 
   print('format: ${detectFormat(bytes).name}');
@@ -42,7 +52,7 @@ void main(List<String> args) {
   // a waveform view or a silence detector is built on.
   print('waveform:    ${asciiWaveform(pcm)}');
 
-  final output = args.length > 1 ? args[1] : '$input.wav';
+  final output = args.length > 1 ? args[1] : '${input.split('/').last}.wav';
   File(output).writeAsBytesSync(encodeWav(pcm));
   print('wrote $output (${pcm.samples.length * 2 + 44} bytes)');
 }

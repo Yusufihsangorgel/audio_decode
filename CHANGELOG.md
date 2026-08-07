@@ -1,3 +1,15 @@
+## 1.1.1
+
+- The example runs without an argument. It used to print a usage line and exit
+  64 unless you had an audio file to hand, which is the first thing anyone
+  following the Example tab on pub.dev would hit. With no argument it now
+  decodes `test/fixtures/sine_44100_stereo_1s.ogg`, which ships in the archive,
+  and prints the format, rate, channels, frames, duration and ASCII waveform
+  before writing the WAV. The output says the tone is a steady sine so the flat
+  waveform reads as correct rather than broken. A path argument behaves as
+  before, and the WAV is now written to the file's basename rather than beside
+  the input.
+
 ## 1.1.0
 
 - **Read WAV, so the package can open what `encodeWav` writes.** `encodeWav`
