@@ -100,10 +100,18 @@ PcmAudio resample(PcmAudio audio, int targetRate) {
 
 /// Mono at 16 kHz, the input shape on-device speech models ask for.
 ///
-/// Whisper, wav2vec 2.0 and the Vosk family all take 16 kHz mono 16-bit PCM,
-/// so this is the one-liner between a decoded file and the model. Equivalent
-/// to `resample(toMono(audio), sampleRate)`; the default is 16000 and the
-/// parameter is there for a model that wants 8 kHz.
+/// Whisper, wav2vec 2.0 and the Vosk family all want 16 kHz mono 16-bit PCM,
+/// so this is the one line between a decoded file and the model.
+///
+/// Whether the caller has to run it depends on the wrapper, so it is worth
+/// checking before reaching for this: some bundle FFmpeg and convert files
+/// themselves, though usually only on part of the platforms they support,
+/// while others never convert and take the bytes exactly as given. Streaming
+/// entry points generally convert nothing. The README's "Feeding a speech
+/// model" section compares the current Dart wrappers.
+///
+/// Equivalent to `resample(toMono(audio), sampleRate)`; the default is 16000
+/// and the parameter is there for a model that wants 8 kHz.
 PcmAudio toSpeechPcm(PcmAudio audio, {int sampleRate = 16000}) =>
     resample(toMono(audio), sampleRate);
 

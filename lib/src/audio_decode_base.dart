@@ -49,7 +49,7 @@ final class AudioDecodeException implements Exception {
 final class PcmAudio {
   /// Creates a [PcmAudio] from its geometry and interleaved [samples].
   ///
-  /// [samples.length] must be a whole multiple of [channels]; the decoders in
+  /// `samples.length` must be a whole multiple of [channels]; the decoders in
   /// this package always produce such a buffer.
   PcmAudio({
     required this.sampleRate,
@@ -75,8 +75,8 @@ final class PcmAudio {
       ? Duration.zero
       : Duration(microseconds: (frameCount * 1000000) ~/ sampleRate);
 
-  /// The samples as normalized floats in the range [-1.0, 1.0], interleaved by
-  /// channel like [samples].
+  /// The samples as normalized floats in the range `[-1.0, 1.0]`, interleaved
+  /// by channel like [samples].
   ///
   /// Each 16-bit sample is divided by 32768, so the full-scale negative value
   /// -32768 maps to -1.0 and +16384 maps to 0.5. This is the form most FFT,
@@ -94,7 +94,7 @@ final class PcmAudio {
   ///
   /// [index] selects the channel, from 0 up to `channels - 1`; for stereo, 0 is
   /// the left channel and 1 is the right. The result has one value per frame,
-  /// each divided by 32768 into the range [-1.0, 1.0] like [toFloat32].
+  /// each divided by 32768 into the range `[-1.0, 1.0]` like [toFloat32].
   ///
   /// Throws a [RangeError] if [index] is not a valid channel.
   Float32List channel(int index) {
@@ -132,7 +132,7 @@ final class PcmAudio {
 }
 
 /// Full-scale divisor for signed 16-bit PCM: samples run to -32768, so dividing
-/// by 32768 maps them into [-1.0, 1.0].
+/// by 32768 maps them into `[-1.0, 1.0]`.
 const double _int16Scale = 32768.0;
 
 /// Identifies the container format of [bytes] from its leading bytes.
@@ -204,14 +204,14 @@ PcmAudio decodeOgg(Uint8List bytes) =>
 PcmAudio decodeMp3(Uint8List bytes) => _decode(bytes, adDecodeMp3, 'MP3');
 
 /// Decodes [bytes] after sniffing its format with [detectFormat], dispatching
-/// to [decodeOgg] or [decodeMp3].
+/// to [decodeOgg], [decodeMp3] or [decodeWav].
 ///
 /// ```dart
 /// final pcm = decodeAudio(await File('clip.mp3').readAsBytes());
 /// ```
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
-/// if the format is neither Ogg Vorbis nor MP3.
+/// if the format is none of Ogg Vorbis, MP3 or WAV.
 PcmAudio decodeAudio(Uint8List bytes) {
   _checkNotEmpty(bytes);
   switch (detectFormat(bytes)) {
@@ -291,7 +291,7 @@ AudioInfo oggInfo(Uint8List bytes) => _info(bytes, adInfoVorbis, 'Ogg Vorbis');
 AudioInfo mp3Info(Uint8List bytes) => _info(bytes, adInfoMp3, 'MP3');
 
 /// Reads [bytes]'s geometry after sniffing its format with [detectFormat],
-/// dispatching to [oggInfo] or [mp3Info].
+/// dispatching to [oggInfo], [mp3Info] or [wavInfo].
 ///
 /// ```dart
 /// final info = audioInfo(await File('track.mp3').readAsBytes());
@@ -299,7 +299,7 @@ AudioInfo mp3Info(Uint8List bytes) => _info(bytes, adInfoMp3, 'MP3');
 /// ```
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
-/// if the format is neither Ogg Vorbis nor MP3.
+/// if the format is none of Ogg Vorbis, MP3 or WAV.
 AudioInfo audioInfo(Uint8List bytes) {
   _checkNotEmpty(bytes);
   switch (detectFormat(bytes)) {

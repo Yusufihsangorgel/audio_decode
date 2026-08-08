@@ -3,9 +3,13 @@
 // Usage:
 //   dart run example/audio_decode_example.dart input.mp3 [output.wav]
 //
-// The input may be Ogg Vorbis or MP3; the format is detected from its bytes.
+// The input may be Ogg Vorbis, MP3 or WAV; the format is detected from its
+// bytes, so the extension does not have to be right.
 // With no argument it decodes a test tone that ships with the package, so the
 // example runs before you have gone looking for an audio file.
+//
+// Given no output path, it writes into a fresh temp directory and prints where.
+// Running an example should not leave a file in the directory you ran it from.
 import 'dart:io';
 
 import 'package:audio_decode/audio_decode.dart';
@@ -19,7 +23,7 @@ void main(List<String> args) {
     if (!File(input).existsSync()) {
       stderr.writeln(
         'usage: dart run example/audio_decode_example.dart '
-        'input.(ogg|mp3) [output.wav]\n'
+        'input.(ogg|mp3|wav) [output.wav]\n'
         '($input is missing, so there is nothing to fall back to)',
       );
       exitCode = 64; // EX_USAGE
@@ -52,9 +56,23 @@ void main(List<String> args) {
   // a waveform view or a silence detector is built on.
   print('waveform:    ${asciiWaveform(pcm)}');
 
-  final output = args.length > 1 ? args[1] : '${input.split('/').last}.wav';
-  File(output).writeAsBytesSync(encodeWav(pcm));
-  print('wrote $output (${pcm.samples.length * 2 + 44} bytes)');
+  final wav = encodeWav(pcm);
+  final output = File(args.length > 1 ? args[1] : _defaultOutputPath(input));
+  output.writeAsBytesSync(wav);
+  print('wrote ${output.path} (${wav.length} bytes)');
+}
+
+/// Where the WAV goes when the caller did not say.
+///
+/// A fresh temp directory, not the working directory: an example that drops a
+/// file into whatever project you ran it from is a nuisance, and in a checkout
+/// it shows up as a stray file in `git status`. `createTempSync` also means two
+/// runs never collide, and never overwrite something already in the temp dir.
+String _defaultOutputPath(String input) {
+  final directory = Directory.systemTemp.createTempSync('audio_decode_example');
+  // Both separators: a Windows caller passes `C:\music\clip.mp3`.
+  final name = input.split(RegExp(r'[/\\]')).last;
+  return '${directory.path}${Platform.pathSeparator}$name.wav';
 }
 
 /// Renders [pcm] as a one-line waveform of [width] columns. Each column is the

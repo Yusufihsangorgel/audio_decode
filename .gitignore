@@ -2,3 +2,7 @@
 build/
 pubspec.lock
 .idea/
+
+# WAV files the examples write into the repo root. Anchored to the root so a
+# fixture under test/ is never caught by it.
+/*.wav

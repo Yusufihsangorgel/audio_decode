@@ -174,9 +174,23 @@ the source. If you need exact-length output, trim to the duration you expect.
 
 ## Feeding a speech model
 
-Whisper, wav2vec 2.0 and the Vosk family all take the same input: **16 kHz
+Whisper, wav2vec 2.0 and the Vosk family all want the same input: **16 kHz
 mono 16-bit PCM**. A decoded file is almost never that — 44.1 kHz stereo is the
-normal case — so this is the step between the two.
+normal case — so something has to bridge the two.
+
+Whether *you* have to is worth checking first, because the Dart wrappers differ
+and the answer decides whether this section is useful to you at all. Read from
+their own docs, at the versions current on 2026-08-08:
+
+| Wrapper | Does it convert for you? |
+|---|---|
+| [`whisper_ggml`](https://pub.dev/packages/whisper_ggml) 2.6.0 | On Android, iOS and macOS, yes: it bundles FFmpeg and converts non-WAV input. On **Windows and Linux it does not bundle FFmpeg** — it uses an `ffmpeg` on `PATH` when one is there, and its README says that otherwise "the input must already be a 16 kHz mono WAV". Its streaming entry point, `transcribeLive`, takes 16 kHz mono PCM16 on every platform. |
+| [`vosk_flutter`](https://pub.dev/packages/vosk_flutter) 0.3.48 | No. `acceptWaveformBytes` takes bytes as they are — its README labels them "PCM 16-bit mono format" — and you fix the rate when you build the recognizer. The package contains no resampling. |
+
+So the gap is narrower than "everyone needs this", and real where it exists:
+Windows and Linux desktop without ffmpeg installed, live PCM streams, and
+wrappers that convert nothing. On macOS with `whisper_ggml` and a file on disk,
+it is already handled and you can skip the step.
 
 ```dart
 final pcm = decodeAudio(File('interview.mp3').readAsBytesSync());
@@ -195,6 +209,12 @@ and nothing downstream can remove it. Measured: a 12 kHz tone resampled to
 16 kHz comes back at 4 kHz with **under 5%** of its original energy — with the
 filter removed, that alias is the loudest thing in the output. The test asserts
 exactly that, so the filter cannot be quietly dropped.
+
+`dart run example/speech_input.dart` converts the stereo fixture, writes the
+16 kHz mono WAV, and prints that comparison on your machine. On an Apple
+M-series laptop the filtered path leaves **0.1%** of the tone at 4 kHz against
+**88.3%** for unfiltered decimation, so the difference is visible rather than
+asserted.
 
 `toMono` averages the channels rather than keeping one, so a stereo recording
 with a speaker on each side does not lose half its content.
@@ -238,6 +258,25 @@ The build hook compiles the vendored C with the toolchain that
 platforms Dart's native build hooks support: Linux, macOS and Windows on the
 Dart VM today, and Flutter as build-hook support there stabilises. Dart 3.10 or
 newer is required.
+
+### `dart compile exe` does not carry the native library yet
+
+The compile step succeeds and the binary it produces then dies on the first
+decode. Measured on Dart 3.11.0, macOS arm64 — `dart compile exe` exits 0, the
+binary exits 255:
+
+```
+Unhandled exception:
+Invalid argument(s): Couldn't resolve native function 'ad_decode_vorbis' in 'package:audio_decode/src/bindings.dart' : No asset with id 'package:audio_decode/src/bindings.dart' found. No available native assets. Attempted to fallback to process lookup. dlsym(RTLD_DEFAULT, ad_decode_vorbis): symbol not found.
+```
+
+"No available native assets" is the runtime reporting an empty asset table: the
+snapshot was written without the library the build hook produced. That is how
+`dart compile exe` currently treats build-hook output rather than something this
+package can supply from its side — the same failure, same message and a
+different symbol name, reproduces in an unrelated package whose native code also
+comes from a build hook. `dart run` and `dart test` resolve the library normally,
+so the constraint is on shipping a standalone AOT binary.
 
 ## Credits and license
 
