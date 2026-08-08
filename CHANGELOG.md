@@ -1,3 +1,25 @@
+## 1.2.0
+
+- **Add `toSpeechPcm`, `resample` and `toMono`.** Whisper, wav2vec 2.0 and Vosk
+  all want 16 kHz mono 16-bit PCM, and a decoded file is almost never that, so
+  every caller feeding a speech model was writing this conversion themselves —
+  against a package that was already holding the samples.
+  `toSpeechPcm(pcm)` is the one line between the two.
+- Downsampling low-passes before it interpolates. Skipping that is the mistake
+  the feature exists to prevent: 44.1 kHz to 16 kHz without a filter folds
+  everything above 8 kHz back into the band as a tone that was never recorded,
+  and it cannot be taken out afterwards. Measured — a 12 kHz tone resampled to
+  16 kHz lands at 4 kHz with under 5% of its original energy, and the test
+  asserts that ratio, so the filter cannot be dropped without the suite going
+  red. Four deliberate defects in the new code were injected and four turned it
+  red; the fifth changes gain by 0.1% and is documented in place rather than
+  pinned.
+- `toMono` averages channels instead of keeping one, and rounds away from zero
+  so quiet material does not drift toward silence.
+- Honest scope, also in the README: this is linear interpolation over a
+  filtered signal, which suits speech features and analysis. It is not a
+  mastering-grade polyphase resampler.
+
 ## 1.1.1
 
 - The example runs without an argument. It used to print a usage line and exit

@@ -172,6 +172,37 @@ decoded MP3 is usually a little longer than the original audio, on the order of
 a thousand samples per channel. Ogg Vorbis decodes to a length very close to
 the source. If you need exact-length output, trim to the duration you expect.
 
+## Feeding a speech model
+
+Whisper, wav2vec 2.0 and the Vosk family all take the same input: **16 kHz
+mono 16-bit PCM**. A decoded file is almost never that — 44.1 kHz stereo is the
+normal case — so this is the step between the two.
+
+```dart
+final pcm = decodeAudio(File('interview.mp3').readAsBytesSync());
+final input = toSpeechPcm(pcm);   // 16 kHz, mono
+// input.samples is Int16List, ready for the model
+```
+
+`toSpeechPcm` is `resample(toMono(audio), 16000)`; both halves are public if
+you want one without the other, and the rate is a parameter for a model that
+wants 8 kHz.
+
+Downsampling low-passes first, which is the part that is easy to skip and
+expensive to skip. Going from 44.1 kHz to 16 kHz without a filter folds
+everything above 8 kHz back into the band as a tone that was never recorded,
+and nothing downstream can remove it. Measured: a 12 kHz tone resampled to
+16 kHz comes back at 4 kHz with **under 5%** of its original energy — with the
+filter removed, that alias is the loudest thing in the output. The test asserts
+exactly that, so the filter cannot be quietly dropped.
+
+`toMono` averages the channels rather than keeping one, so a stereo recording
+with a speaker on each side does not lose half its content.
+
+What this is not: a mastering-grade resampler. It is linear interpolation over
+a filtered signal — right for speech features and analysis, which is what
+callers do with PCM here. If you need a polyphase bank, this is not it.
+
 ## Performance, or: why not just run ffmpeg?
 
 Shelling out to `ffmpeg` is the usual way to get PCM out of an encoded file

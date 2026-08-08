@@ -132,7 +132,12 @@ PcmAudio _lowPass(PcmAudio audio, {required double cutoff}) {
     sum += kernel[i];
   }
   for (var i = 0; i < taps; i++) {
-    kernel[i] /= sum; // unity gain at DC, so loudness does not change
+    // Unity gain at DC, so resampling does not change loudness. At the
+    // current window and tap count the raw kernel already sums to 0.999, so
+    // this corrects about 0.1% and no test can meaningfully pin it — it is
+    // here because that is an accident of these constants, not a property of
+    // the design. Change the window or the tap count and it starts mattering.
+    kernel[i] /= sum;
   }
 
   final channels = audio.channels;
