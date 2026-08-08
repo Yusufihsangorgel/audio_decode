@@ -94,6 +94,49 @@ void main() {
       );
     });
 
+    test(
+      'keeps the level: an in-band tone comes back at the same amplitude',
+      () {
+        // The low-pass kernel is normalised to unity gain at DC. Without that
+        // the whole signal is scaled by whatever the taps happen to sum to —
+        // audible, and invisible to a test that only asks "is there still
+        // energy here". Peak amplitude is the thing that moves, so assert on it.
+        final source = tone(1000);
+        final out = resample(source, 16000);
+
+        int peak(PcmAudio a) =>
+            a.samples.fold(0, (m, s) => s.abs() > m ? s.abs() : m);
+
+        expect(
+          peak(out) / peak(source),
+          closeTo(1.0, 0.1),
+          reason: 'level shifted; the filter kernel is probably not normalised',
+        );
+      },
+    );
+
+    test('interpolates between samples rather than repeating the nearest', () {
+      // A ramp upsampled 2x must produce values *between* the source samples.
+      // Nearest-neighbour would repeat each one, so every output would equal
+      // some input; linear interpolation puts new values in the gaps.
+      final ramp = PcmAudio(
+        sampleRate: 8000,
+        channels: 1,
+        samples: Int16List.fromList([0, 1000, 2000, 3000, 4000, 5000]),
+      );
+      final out = resample(ramp, 16000);
+      final sourceValues = ramp.samples.toSet();
+      final novel = out.samples.where((s) => !sourceValues.contains(s)).length;
+
+      expect(
+        novel,
+        greaterThan(2),
+        reason:
+            'every output sample equals an input one, so nothing was '
+            'interpolated',
+      );
+    });
+
     test('upsampling does not need the filter and keeps the tone', () {
       final source = tone(1000, rate: 8000);
       final out = resample(source, 16000);
