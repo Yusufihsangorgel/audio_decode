@@ -49,4 +49,5 @@ export 'src/audio_decode_base.dart'
         encodeWav,
         mp3Info,
         oggInfo;
+export 'src/resample.dart' show resample, toMono, toSpeechPcm;
 export 'src/wav_decoder.dart' show decodeWav, wavInfo;
