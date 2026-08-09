@@ -1,19 +1,52 @@
+## 1.2.1
+
+- New example, `example/speech_input.dart`: the conversion in front of a speech
+  model, run end to end. It decodes the stereo fixture, writes the 16 kHz mono
+  WAV with `toSpeechPcm`, then takes a 12 kHz tone down to 16 kHz twice, once
+  through `resample()` and once by plain decimation, and reports the energy
+  left at the 4 kHz alias by each path: 0.1% against 88.3% on an Apple
+  M-series laptop. The cost of skipping the filter stops being a claim once
+  the unfiltered number is on your own screen.
+- The README's "Feeding a speech model" section now says who actually needs
+  that conversion, read from the wrappers' own docs at their current versions:
+  `whisper_ggml` 2.6.0 bundles FFmpeg on Android, iOS and macOS but converts
+  nothing on Windows or Linux without an `ffmpeg` on `PATH`, and its live
+  entry point takes 16 kHz mono PCM16 on every platform; `vosk_flutter` 0.3.48
+  never converts. The gap is narrower than "everyone needs this", and real
+  where it exists.
+- Both examples write their WAV into a fresh temp directory and print the
+  path. The old default dropped the file into whatever directory you ran the
+  example from; in a checkout it turned up in `git status`. The 1.2.0 archive
+  itself shipped one, a stray 172 KiB `sine_44100_stereo_1s.ogg.wav` at the
+  package root produced exactly that way, and this release removes it.
+- The `decodeAudio` and `audioInfo` doc comments still said they throw for
+  anything that is "neither Ogg Vorbis nor MP3". WAV has been decoded since
+  1.1.0; the docs now name all three formats. Two dartdoc ranges written as
+  `[-1.0, 1.0]` rendered as broken reference links and are backticked now.
+- A pub.dev screenshot caption read "stb_vorbis or m inimp3": the description
+  was YAML-folded across a line break in the middle of the word. Both captions
+  are single lines now.
+- The README documents that `dart compile exe` currently produces a binary
+  that cannot resolve the native library: the compile exits 0 and the binary
+  dies on its first decode, on Dart 3.11.0. `dart run` and `dart test` are
+  unaffected.
+
 ## 1.2.0
 
 - **Add `toSpeechPcm`, `resample` and `toMono`.** Whisper, wav2vec 2.0 and Vosk
-  all want 16 kHz mono 16-bit PCM, and a decoded file is almost never that, so
-  every caller feeding a speech model was writing this conversion themselves —
-  against a package that was already holding the samples.
-  `toSpeechPcm(pcm)` is the one line between the two.
+  all want 16 kHz mono 16-bit PCM, and a decoded file is almost never that.
+  Every caller feeding a speech model was writing that conversion by hand,
+  against a package that was already holding the samples. `toSpeechPcm(pcm)` is
+  the one line between the two.
 - Downsampling low-passes before it interpolates. Skipping that is the mistake
   the feature exists to prevent: 44.1 kHz to 16 kHz without a filter folds
   everything above 8 kHz back into the band as a tone that was never recorded,
-  and it cannot be taken out afterwards. Measured — a 12 kHz tone resampled to
+  and it cannot be taken out afterwards. Measured: a 12 kHz tone resampled to
   16 kHz lands at 4 kHz with under 5% of its original energy, and the test
-  asserts that ratio, so the filter cannot be dropped without the suite going
-  red. Four deliberate defects in the new code were injected and four turned it
-  red; the fifth changes gain by 0.1% and is documented in place rather than
-  pinned.
+  asserts that ratio, which is what keeps the filter from being dropped without
+  the suite going red. Four deliberate defects in the new code were injected and
+  four turned it red; the fifth changes gain by 0.1% and is documented in place
+  rather than pinned.
 - `toMono` averages channels instead of keeping one, and rounds away from zero
   so quiet material does not drift toward silence.
 - Honest scope, also in the README: this is linear interpolation over a

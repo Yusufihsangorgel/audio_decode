@@ -104,8 +104,8 @@ truncation points on a committed fixture:
   looked for an exception accepted a file containing no audio.
 
 MP3 is worse by construction: a bare sequence of frames with no length anywhere
-in it, so a cut-off file is indistinguishable from a shorter recording. A file
-truncated to a third of its length decodes to roughly a third of the audio.
+in it, which leaves a cut-off file indistinguishable from a shorter recording. A
+file truncated to a third of its length decodes to roughly a third of the audio.
 
 So if you are decoding something that may be incomplete, a partial download or
 a stream you cut, compare the duration you expected against `PcmAudio.duration`.
@@ -134,8 +134,8 @@ final Float32List left = pcm.channel(0);
 final PcmAudio mono = pcm.toMono();
 ```
 
-Each 16-bit sample is divided by 32768, so -32768 becomes -1.0 and 16384
-becomes 0.5. `toMono()` returns the audio unchanged when it is already mono.
+Each 16-bit sample is divided by 32768: -32768 becomes -1.0 and 16384 becomes
+0.5. `toMono()` returns the audio unchanged when it is already mono.
 
 ## Duration without decoding
 
@@ -175,8 +175,8 @@ the source. If you need exact-length output, trim to the duration you expect.
 ## Feeding a speech model
 
 Whisper, wav2vec 2.0 and the Vosk family all want the same input: **16 kHz
-mono 16-bit PCM**. A decoded file is almost never that — 44.1 kHz stereo is the
-normal case — so something has to bridge the two.
+mono 16-bit PCM**. A decoded file is almost never that. 44.1 kHz stereo is the
+normal case, and something has to bridge the two.
 
 Whether *you* have to is worth checking first, because the Dart wrappers differ
 and the answer decides whether this section is useful to you at all. Read from
@@ -184,8 +184,8 @@ their own docs, at the versions current on 2026-08-08:
 
 | Wrapper | Does it convert for you? |
 |---|---|
-| [`whisper_ggml`](https://pub.dev/packages/whisper_ggml) 2.6.0 | On Android, iOS and macOS, yes: it bundles FFmpeg and converts non-WAV input. On **Windows and Linux it does not bundle FFmpeg** — it uses an `ffmpeg` on `PATH` when one is there, and its README says that otherwise "the input must already be a 16 kHz mono WAV". Its streaming entry point, `transcribeLive`, takes 16 kHz mono PCM16 on every platform. |
-| [`vosk_flutter`](https://pub.dev/packages/vosk_flutter) 0.3.48 | No. `acceptWaveformBytes` takes bytes as they are — its README labels them "PCM 16-bit mono format" — and you fix the rate when you build the recognizer. The package contains no resampling. |
+| [`whisper_ggml`](https://pub.dev/packages/whisper_ggml) 2.6.0 | On Android, iOS and macOS, yes: it bundles FFmpeg and converts non-WAV input. On **Windows and Linux it does not bundle FFmpeg**: it uses an `ffmpeg` on `PATH` when one is there, and its README says that otherwise "the input must already be a 16 kHz mono WAV". Its streaming entry point, `transcribeLive`, takes 16 kHz mono PCM16 on every platform. |
+| [`vosk_flutter`](https://pub.dev/packages/vosk_flutter) 0.3.48 | No. `acceptWaveformBytes` takes bytes as they are (its README labels them "PCM 16-bit mono format"), and you fix the rate when you build the recognizer. The package contains no resampling. |
 
 So the gap is narrower than "everyone needs this", and real where it exists:
 Windows and Linux desktop without ffmpeg installed, live PCM streams, and
@@ -206,7 +206,7 @@ Downsampling low-passes first, which is the part that is easy to skip and
 expensive to skip. Going from 44.1 kHz to 16 kHz without a filter folds
 everything above 8 kHz back into the band as a tone that was never recorded,
 and nothing downstream can remove it. Measured: a 12 kHz tone resampled to
-16 kHz comes back at 4 kHz with **under 5%** of its original energy — with the
+16 kHz comes back at 4 kHz with **under 5%** of its original energy. With the
 filter removed, that alias is the loudest thing in the output. The test asserts
 exactly that, so the filter cannot be quietly dropped.
 
@@ -220,8 +220,8 @@ asserted.
 with a speaker on each side does not lose half its content.
 
 What this is not: a mastering-grade resampler. It is linear interpolation over
-a filtered signal — right for speech features and analysis, which is what
-callers do with PCM here. If you need a polyphase bank, this is not it.
+a filtered signal, which is right for speech features and analysis, and that is
+what callers do with PCM here. If you need a polyphase bank, this is not it.
 
 ## Performance, or: why not just run ffmpeg?
 
@@ -233,9 +233,9 @@ starting a process is not free, and you pay that cost once per file.
 ![Decoding the same Ogg file in process and by spawning ffmpeg. Every ffmpeg bar starts with the same 24.8 ms block of process startup; at one second of audio almost none of the time is spent decoding](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/benchmark.png)
 
 On an Apple M-series laptop, ffmpeg takes about 24.8 ms before it has decoded a
-single sample. That figure is measured, not inferred: hand it a 0.05-second
-clip, where there is essentially nothing to decode, and 24.8 ms is what is
-left. It does not shrink for a short file: decoding a one-second clip
+single sample. That figure is measured rather than inferred: hand it a
+0.05-second clip, where there is essentially nothing to decode, and 24.8 ms is
+what is left. It does not shrink for a short file: decoding a one-second clip
 through a subprocess spends 98% of its time not decoding.
 
 The decoding itself is in the same class either way. Over thirty seconds of
@@ -262,7 +262,7 @@ newer is required.
 ### `dart compile exe` does not carry the native library yet
 
 The compile step succeeds and the binary it produces then dies on the first
-decode. Measured on Dart 3.11.0, macOS arm64 — `dart compile exe` exits 0, the
+decode. Measured on Dart 3.11.0, macOS arm64. `dart compile exe` exits 0, the
 binary exits 255:
 
 ```
@@ -272,11 +272,11 @@ Invalid argument(s): Couldn't resolve native function 'ad_decode_vorbis' in 'pac
 
 "No available native assets" is the runtime reporting an empty asset table: the
 snapshot was written without the library the build hook produced. That is how
-`dart compile exe` currently treats build-hook output rather than something this
-package can supply from its side — the same failure, same message and a
-different symbol name, reproduces in an unrelated package whose native code also
-comes from a build hook. `dart run` and `dart test` resolve the library normally,
-so the constraint is on shipping a standalone AOT binary.
+`dart compile exe` currently treats build-hook output, rather than something
+this package can supply from its side. The same failure, with the same message
+and a different symbol name, reproduces in an unrelated package whose native
+code also comes from a build hook. `dart run` and `dart test` resolve the
+library normally, so the constraint is on shipping a standalone AOT binary.
 
 ## Credits and license
 
