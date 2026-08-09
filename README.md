@@ -6,30 +6,6 @@
 ![The benchmark running: decode timings across the supported formats, with the
 sample rate and channel count of each result](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/demo.gif)
 
-Native Ogg Vorbis and MP3 decoding to raw PCM for Dart, over FFI, plus WAV in pure Dart. The C
-decoders are compiled from source by a Dart build hook, which makes the package
-self-contained: no platform plugins, no bundled binary, and no system library to
-install beyond a C toolchain.
-
-The same code path runs in pure Dart (command-line tools, servers, tests) and
-in Flutter. That makes it a good fit for waveform rendering, audio analysis,
-resampling, machine-learning preprocessing, servers and games.
-
-Decoding is deterministic for a given build: the same bytes decode to the same
-samples every time, and the geometry (channel count, sample rate, frame count)
-is the same everywhere. Sample values are not bit-identical across CPU
-architectures, though. Both decoders compute in floating point, and a compiler
-is free to fuse a multiply and an add on arm64 where it does not on baseline
-x86-64, so the last rounding can land differently. Measured across this
-package's own fixtures, that is around 0.03% of samples differing by one
-least-significant bit: inaudible, but enough that a checksum of decoded PCM
-will not match across a mixed-architecture fleet.
-
-It is built on two well-known public-domain single-file libraries:
-
-- Ogg Vorbis: [stb_vorbis](https://github.com/nothings/stb) by Sean Barrett.
-- MP3: [minimp3](https://github.com/lieff/minimp3) by lieff.
-
 ## Why this instead of what you already have
 
 **Instead of a pure-Dart decoder.** There is no `dart:` route for this;
@@ -59,6 +35,30 @@ package is plain Dart and behaves the same way in all three.
 **Skip it** if you need AAC, FLAC, or Opus, or you simply want to play a file:
 this package decodes MP3, Ogg Vorbis, and WAV, and a player package is the
 right tool for playback.
+
+Native Ogg Vorbis and MP3 decoding to raw PCM for Dart, over FFI, plus WAV in pure Dart. The C
+decoders are compiled from source by a Dart build hook, which makes the package
+self-contained: no platform plugins, no bundled binary, and no system library to
+install beyond a C toolchain.
+
+The same code path runs in pure Dart (command-line tools, servers, tests) and
+in Flutter. That makes it a good fit for waveform rendering, audio analysis,
+resampling, machine-learning preprocessing, servers and games.
+
+Decoding is deterministic for a given build: the same bytes decode to the same
+samples every time, and the geometry (channel count, sample rate, frame count)
+is the same everywhere. Sample values are not bit-identical across CPU
+architectures, though. Both decoders compute in floating point, and a compiler
+is free to fuse a multiply and an add on arm64 where it does not on baseline
+x86-64, so the last rounding can land differently. Measured across this
+package's own fixtures, that is around 0.03% of samples differing by one
+least-significant bit: inaudible, but enough that a checksum of decoded PCM
+will not match across a mixed-architecture fleet.
+
+It is built on two well-known public-domain single-file libraries:
+
+- Ogg Vorbis: [stb_vorbis](https://github.com/nothings/stb) by Sean Barrett.
+- MP3: [minimp3](https://github.com/lieff/minimp3) by lieff.
 
 ## What this is not
 
