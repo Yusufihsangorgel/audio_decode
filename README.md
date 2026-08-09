@@ -28,6 +28,36 @@ It is built on two well-known public-domain single-file libraries:
 - Ogg Vorbis: [stb_vorbis](https://github.com/nothings/stb) by Sean Barrett.
 - MP3: [minimp3](https://github.com/lieff/minimp3) by lieff.
 
+## Why this instead of what you already have
+
+**Instead of a pure-Dart decoder.** There is no `dart:` route for this;
+nothing in the SDK decodes MP3 or Ogg Vorbis. The nearest pure-Dart option,
+`glint_audio_pure`, does export a real `mp3Decode`
+(`lib/src/mp3_decoder.dart:32`), but its library file exports MP3 and WAV only
+(`lib/glint_audio_pure.dart`), with no Ogg Vorbis anywhere in the package. On
+the 7,589-byte fixture in this repo's tests, decoding took 206 µs here against
+41.2 ms there, measured in both orderings so neither side paid VM warmup
+alone. Their sample counts differed by exactly one MP3 frame, 94,464 against
+92,160, which is the usual encoder-delay handling difference and not something
+I chased down.
+
+**Instead of `audio_decoder`.** It is the most-downloaded named option and it
+routes to the platform codecs, which costs a hard dependency on Flutter: its
+`pubspec.yaml` declares `flutter: sdk: flutter` alongside
+`flutter_web_plugins`. A `dart run` process has no Flutter engine to host
+those channels, so it cannot run in a CLI, a test, or a server at all. This
+package is plain Dart and behaves the same way in all three.
+
+**Reach for it when**
+
+- You need PCM for waveform rendering, analysis, or ML preprocessing, not playback.
+- You decode audio in a server, a CLI tool, or a unit test with no Flutter engine.
+- You want Ogg Vorbis handled without shipping ffmpeg or hoping one is on `PATH`.
+
+**Skip it** if you need AAC, FLAC, or Opus, or you simply want to play a file:
+this package decodes MP3, Ogg Vorbis, and WAV, and a player package is the
+right tool for playback.
+
 ## What this is not
 
 This is a decoder, not a player. It turns encoded bytes into PCM samples; it
