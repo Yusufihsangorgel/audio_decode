@@ -251,6 +251,39 @@ measures absolute throughput instead: the 30-second stereo 44100 Hz clip above
 is 2.6M interleaved samples, or about 205 million samples per second. These are
 synthetic-tone numbers; a dense music track decodes more slowly.
 
+## Shipping a standalone binary
+
+`dart compile exe` does not run build hooks, so a program that depends on this
+package stops before it starts:
+
+```
+$ dart compile exe bin/my_cli.dart
+'dart compile' does not support build hooks, use 'dart build' instead.
+```
+
+`dart build cli` runs the hook and lays the pieces out for you:
+
+```
+$ dart build cli
+Generated: build/cli/<os>_<arch>/bundle/bin/my_cli
+$ ls build/cli/macos_arm64/bundle/*
+bin/  my_cli
+lib/  libaudio_decode.dylib
+```
+
+Ship the whole `bundle/` directory. The executable resolves its library through
+a relative `../lib` path, so a copy of the binary on its own fails at the first
+call:
+
+```
+Failed to load dynamic library '../lib/libaudio_decode.dylib'
+```
+
+`dart build cli` takes no positional target. With one file under `bin/` the bare
+command is enough; with more than one, pass `-t`. `dart run` and `dart test` are
+unaffected, since both run the hook already. The command is marked preview in
+Dart 3.11.
+
 ## Platforms
 
 The build hook compiles the vendored C with the toolchain that
