@@ -5,7 +5,7 @@
 ![Compressed bytes are decoded to PCM samples](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/architecture.png)
 
 Native Ogg Vorbis and MP3 decoding to raw PCM for Dart, over FFI, plus WAV in pure Dart. The C
-decoders are compiled from source by a Dart build hook, so the package is
+decoders are compiled from source by a Dart build hook, which makes the package
 self-contained: no platform plugins, no bundled binary, and no system library to
 install beyond a C toolchain.
 
@@ -40,9 +40,9 @@ Scope:
 
 - Decodes Ogg Vorbis, MP3 and uncompressed WAV to interleaved signed 16-bit
   PCM. WAV needs no native code and covers 8/16/24/32-bit integer and IEEE
-  float, so `encodeWav` output reads straight back.
-- Encodes PCM back to a 16-bit WAV file (`encodeWav`), so decoded audio can be
-  saved or handed to other tools.
+  float; `encodeWav` output reads straight back.
+- Encodes PCM back to a 16-bit WAV file (`encodeWav`), which lets decoded audio
+  be saved or handed to other tools.
 - No encoding to Vorbis or MP3, and no other container or codec.
 
 ## Quick start
@@ -97,7 +97,7 @@ truncation points on a committed fixture:
   because the header pages fail their checksum; there is nothing to decode.
 - **Cut after the header:** decodes the audio that arrived and returns it, no
   exception. Ogg has per-page checksums, but the pages that did arrive are
-  intact, so nothing is detectably wrong. Detecting the missing tail needs the
+  intact, and nothing is detectably wrong. Detecting the missing tail needs the
   end-of-stream page flag, which this package does not check yet.
 - **Cut that yields no frames at all:** throws, since 1.0.1. This used to
   return success with `frameCount == 0`, which meant an upload check that only
@@ -111,8 +111,8 @@ So if you are decoding something that may be incomplete, a partial download or
 a stream you cut, compare the duration you expected against `PcmAudio.duration`.
 Do not rely on an exception.
 
-Samples are copied out of native memory before each call returns, so there is
-no native buffer for the caller to manage.
+Samples are copied out of native memory before each call returns, leaving no
+native buffer for the caller to manage.
 
 ## Normalized and per-channel samples
 
@@ -161,7 +161,7 @@ warmed up and averaged (Apple M-series):
 | MP3 | 0.9 µs | 217 µs |
 
 The two formats differ because of what each has to do. Vorbis stores its
-length in the container, so stb_vorbis opens the stream and reads it. MP3 has
+length in the container, which stb_vorbis reads after opening the stream. MP3 has
 no total-length field, so the frame headers still have to be walked; what is
 skipped is the decoding and the PCM buffer, which is where the time goes.
 
@@ -213,7 +213,7 @@ exactly that, so the filter cannot be quietly dropped.
 `dart run example/speech_input.dart` converts the stereo fixture, writes the
 16 kHz mono WAV, and prints that comparison on your machine. On an Apple
 M-series laptop the filtered path leaves **0.1%** of the tone at 4 kHz against
-**88.3%** for unfiltered decimation, so the difference is visible rather than
+**88.3%** for unfiltered decimation; the difference is visible rather than
 asserted.
 
 `toMono` averages the channels rather than keeping one, so a stereo recording
@@ -230,12 +230,12 @@ from Dart, and for an offline batch job it is a perfectly good answer. The
 reason to decode in process is not that the codec here is faster. It is that
 starting a process is not free, and you pay that cost once per file.
 
-![Decoding the same Ogg file in process and by spawning ffmpeg. Every ffmpeg bar starts with the same 24.8 ms block of process startup, so at one second of audio almost none of the time is spent decoding](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/benchmark.png)
+![Decoding the same Ogg file in process and by spawning ffmpeg. Every ffmpeg bar starts with the same 24.8 ms block of process startup; at one second of audio almost none of the time is spent decoding](https://raw.githubusercontent.com/Yusufihsangorgel/audio_decode/main/doc/benchmark.png)
 
 On an Apple M-series laptop, ffmpeg takes about 24.8 ms before it has decoded a
 single sample. That figure is measured, not inferred: hand it a 0.05-second
 clip, where there is essentially nothing to decode, and 24.8 ms is what is
-left. It does not shrink for a short file, so decoding a one-second clip
+left. It does not shrink for a short file: decoding a one-second clip
 through a subprocess spends 98% of its time not decoding.
 
 The decoding itself is in the same class either way. Over thirty seconds of
@@ -245,8 +245,8 @@ about 25 seconds of process startup that in-process decoding never pays, while
 one long file is close to a wash.
 
 `dart run bench/vs_ffmpeg.dart` reproduces the chart on your machine. It checks
-that both paths decode to the same samples before it reports any timing, so a
-number that looks too good has to survive that first. `dart run bench/bench.dart`
+that both paths decode to the same samples before it reports any timing, which
+means a number that looks too good has to survive that first. `dart run bench/bench.dart`
 measures absolute throughput instead: the 30-second stereo 44100 Hz clip above
 is 2.6M interleaved samples, or about 205 million samples per second. These are
 synthetic-tone numbers; a dense music track decodes more slowly.
