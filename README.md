@@ -197,6 +197,22 @@ length in the container, which stb_vorbis reads after opening the stream. MP3 ha
 no total-length field, so the frame headers still have to be walked; what is
 skipped is the decoding and the PCM buffer, which is where the time goes.
 
+Time is the smaller half. The PCM buffer is the other one, and it does not
+shrink with a faster machine:
+
+```
+file                                on disk   decoded   ratio
+sine_44100_stereo_1s.ogg               7 KB    345 KB     52x
+sine_44100_stereo_1s.mp3               7 KB    369 KB     50x
+sine_48000_mono_halfsec.mp3            3 KB    104 KB     33x
+```
+
+Those are one-second tones. A three-minute track at 44.1 kHz stereo is about
+30 MB of float samples and an album is most of a gigabyte — to print a running
+time that is already in the header. `dart run
+example/info_without_decoding.dart` measures it on the fixtures in this
+repository.
+
 ## A note on MP3 length
 
 MP3 is a lossy frame format with built-in encoder and decoder delay, so a

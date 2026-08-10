@@ -1,3 +1,11 @@
+## 1.3.3
+
+- New `example/info_without_decoding.dart`, the first runnable use of
+  `audioInfo` in this package. The README already timed it against
+  `decodeAudio`; this measures the other half, which is memory: the fixtures
+  decode to 33-52x their size on disk, and a decoded album is most of a
+  gigabyte to answer a question the header already holds.
+
 ## 1.3.2
 
 - The section on why to reach for this rather than the alternative now sits
