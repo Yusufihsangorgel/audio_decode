@@ -1,3 +1,7 @@
+## 1.3.4
+
+- Update `code_assets` to 2.0.0 for native build hooks.
+
 ## 1.3.3
 
 - New `example/info_without_decoding.dart`, the first runnable use of
