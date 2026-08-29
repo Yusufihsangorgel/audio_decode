@@ -1,0 +1,16 @@
+# audio_decode
+
+Decode MP3 and Ogg Vorbis to raw PCM in Dart, over FFI. Compiles stb_vorbis and minimp3 from source: self-contained, pure-Dart friendly, no platform plugins or prebuilt binaries.
+
+pub.dev: https://pub.dev/packages/audio_decode
+source: https://github.com/Yusufihsangorgel/audio_decode
+
+## Before you call it
+
+README.md carries the usage, the measured comparison against the alternatives, and a note on when not to reach for this package.
+
+## Layout
+
+- `lib/` — public API
+- `example/` — runnable examples
+- `test/` — the suite; `dart test` (or `flutter test`) runs it
