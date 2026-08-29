@@ -368,14 +368,15 @@ Uint8List encodeWav(PcmAudio audio) {
 
 /// The shared decode path: validate, copy into native memory, call the decoder,
 /// copy the samples back into a Dart [Int16List] and free the native buffer.
-typedef _DecodeFn = int Function(
-  Pointer<Uint8>,
-  int,
-  Pointer<Int>,
-  Pointer<Int>,
-  Pointer<Int>,
-  Pointer<Pointer<Int16>>,
-);
+typedef _DecodeFn =
+    int Function(
+      Pointer<Uint8>,
+      int,
+      Pointer<Int>,
+      Pointer<Int>,
+      Pointer<Int>,
+      Pointer<Pointer<Int16>>,
+    );
 
 PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
   _checkNotEmpty(bytes);
@@ -438,13 +439,8 @@ PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
   }
 }
 
-typedef _InfoFn = int Function(
-  Pointer<Uint8>,
-  int,
-  Pointer<Int>,
-  Pointer<Int>,
-  Pointer<Int>,
-);
+typedef _InfoFn =
+    int Function(Pointer<Uint8>, int, Pointer<Int>, Pointer<Int>, Pointer<Int>);
 
 AudioInfo _info(Uint8List bytes, _InfoFn readInfo, String formatName) {
   _checkNotEmpty(bytes);
