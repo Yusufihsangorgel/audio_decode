@@ -94,26 +94,23 @@ void main() {
       );
     });
 
-    test(
-      'keeps the level: an in-band tone comes back at the same amplitude',
-      () {
-        // The low-pass kernel is normalised to unity gain at DC. Without that
-        // the whole signal is scaled by whatever the taps happen to sum to —
-        // audible, and invisible to a test that only asks "is there still
-        // energy here". Peak amplitude is the thing that moves, so assert on it.
-        final source = tone(1000);
-        final out = resample(source, 16000);
+    test('keeps the level: an in-band tone comes back at the same amplitude', () {
+      // The low-pass kernel is normalised to unity gain at DC. Without that
+      // the whole signal is scaled by whatever the taps happen to sum to —
+      // audible, and invisible to a test that only asks "is there still
+      // energy here". Peak amplitude is the thing that moves, so assert on it.
+      final source = tone(1000);
+      final out = resample(source, 16000);
 
-        int peak(PcmAudio a) =>
-            a.samples.fold(0, (m, s) => s.abs() > m ? s.abs() : m);
+      int peak(PcmAudio a) =>
+          a.samples.fold(0, (m, s) => s.abs() > m ? s.abs() : m);
 
-        expect(
-          peak(out) / peak(source),
-          closeTo(1.0, 0.1),
-          reason: 'level shifted; the filter kernel is probably not normalised',
-        );
-      },
-    );
+      expect(
+        peak(out) / peak(source),
+        closeTo(1.0, 0.1),
+        reason: 'level shifted; the filter kernel is probably not normalised',
+      );
+    });
 
     test('interpolates between samples rather than repeating the nearest', () {
       // A ramp upsampled 2x must produce values *between* the source samples.
