@@ -110,13 +110,14 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
   `duration`, plus `toFloat32()`, `channel(int)` and `toMono()` for the
   normalized and per-channel forms described below.
 - `decodeAudio(Uint8List)` sniffs the format and dispatches.
-- `decodeOgg(Uint8List)` and `decodeMp3(Uint8List)` decode a known format.
-- `detectFormat(Uint8List)` returns `AudioFormat.ogg`, `AudioFormat.mp3` or
-  `AudioFormat.unknown`.
+- `decodeOgg(Uint8List)`, `decodeMp3(Uint8List)` and `decodeWav(Uint8List)`
+  decode a known format.
+- `detectFormat(Uint8List)` returns `AudioFormat.ogg`, `AudioFormat.mp3`,
+  `AudioFormat.wav` or `AudioFormat.unknown`.
 - `encodeWav(PcmAudio)` returns a canonical 16-bit PCM WAV as `Uint8List`.
 - `audioInfo(Uint8List)` returns an `AudioInfo` with `sampleRate`, `channels`,
-  `frameCount` and `duration` without decoding to PCM; `oggInfo` and `mp3Info`
-  do the same for a known format. See below.
+  `frameCount` and `duration` without decoding to PCM; `oggInfo`, `mp3Info` and
+  `wavInfo` do the same for a known format. See below.
 
 Empty input throws `ArgumentError`. Bytes that are not decodable audio throw
 `AudioDecodeException`.
