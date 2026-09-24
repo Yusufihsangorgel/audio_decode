@@ -1,13 +1,15 @@
 # audio_decode examples
 
-Two command-line examples. Both run with no arguments against fixtures that
+Four command-line examples. Three run with no arguments against fixtures that
 ship with the package, so you can see the output before finding an audio file
-of your own.
+of your own. `decode_to_wav.dart` takes the file to decode and the WAV to write.
 
 | File | What it shows |
 |---|---|
 | `audio_decode_example.dart` | Decode any Ogg/MP3/WAV, inspect the stream, write it back as a WAV |
 | `speech_input.dart` | Turn a decoded file into the 16 kHz mono PCM a speech model wants — and measure what skipping the filter would cost |
+| `info_without_decoding.dart` | Read duration, sample rate and channels with `audioInfo`, and measure what decoding every sample would cost instead |
+| `decode_to_wav.dart` | Decode one Ogg, MP3 or WAV file named on the command line and write its PCM to a WAV path you choose |
 
 ## `audio_decode_example.dart` — decode and inspect
 
@@ -99,3 +101,17 @@ Point it at your own audio, or ask for a different rate by editing the
 ```
 dart run example/speech_input.dart interview.mp3 [model_input.wav]
 ```
+
+## `decode_to_wav.dart`: one file in, one WAV out
+
+The shortest complete program in the set. It decodes the file named by the
+first argument and writes the samples as a WAV to the path named by the second.
+
+```
+$ dart run example/decode_to_wav.dart test/fixtures/sine_44100_stereo_1s.ogg out.wav
+wrote out.wav (44100 Hz, 2 channels, 176444 bytes)
+```
+
+Without both arguments it prints its usage and exits with 64. The other
+failures have their own codes: 66 when the input cannot be read, 65 when it is
+not audio the package decodes, 74 when the WAV cannot be written.
