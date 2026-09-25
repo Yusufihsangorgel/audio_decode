@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "package": "audio_decode",
+  "survey_digest": "f90f45c8a172068c3ed3b9488ba5a7cb4e58efa93c380d2d9a70b399349ec35e",
+  "items": [
+    {
+      "id": "audio_decode-D001",
+      "source_index": 1,
+      "source_item_digest": "cfa3de93ab7001ff1060048d517549c7639bcae75080ac7610e63fbda5b04623",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/audio_decode_base.dart",
+          "lines": "118-131"
+        },
+        {
+          "path": "lib/src/resample.dart",
+          "lines": "11-36"
+        }
+      ],
+      "kind": "duplicated logic + double public API",
+      "observation": "`PcmAudio.toMono()` and the top-level `toMono(PcmAudio)` each implement the same averaging separately and their contracts differ: when `channels < 1`, the method returns `this` and the function throws `ArgumentError`. Both are public and tested separately (test/audio_decode_test.dart:306-326, test/resample_test.dart:43-66).",
+      "certainty": "confirmed",
+      "proposed_fix": "Delegate the method to the top-level function with `=> toMono(this)`; the public API is not removed. Make one decision for `channels < 1`, align both test groups to the same expectation, and record it in CHANGELOG.",
+      "related_rule_ids": [
+        "audio_decode/AD-04",
+        "audio_decode/AD-13"
+      ],
+      "issue_url": null,
+      "closure_criteria": "PcmAudio.toMono() delegates to the top-level toMono function and both paths enforce one shared behavior for channels below 1. test/audio_decode_test.dart and test/resample_test.dart assert the same expectation and CHANGELOG.md records the decision.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D002",
+      "source_index": 2,
+      "source_item_digest": "6bbbfbc9ae31bad595e21734bdb2cf7e24a17180bce17648aebca197b122161a",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "medium",
+      "locations": [
+        {
+          "path": "lib/src/audio_decode_base.dart",
+          "lines": "4"
+        },
+        {
+          "path": "lib/src/wav_decoder.dart",
+          "lines": "3"
+        }
+      ],
+      "kind": "import cycle / dependency direction",
+      "observation": "The value types (PcmAudio, AudioInfo, AudioDecodeException, AudioFormat) live in the same file as the native path and dispatch. The pure Dart WAV decoder imports base for the types; base imports wav_decoder for dispatch.",
+      "certainty": "confirmed",
+      "proposed_fix": "Move the types and the exception to `lib/src/types.dart`; base, wav_decoder and resample import only that. Update the export lines in `lib/audio_decode.dart`; the names in the show lists and the public API do not change.",
+      "related_rule_ids": [
+        "audio_decode/AD-01",
+        "audio_decode/AD-06"
+      ],
+      "issue_url": null,
+      "closure_criteria": "PcmAudio, AudioInfo, AudioDecodeException and AudioFormat are defined in lib/src/types.dart and base, wav_decoder and resample import only that file for them. The show lists in lib/audio_decode.dart export the same names as before.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D003",
+      "source_index": 3,
+      "source_item_digest": "ea8bfbb20a6452627c4931bc250f6b2159b10dd7e2eedc41c669bff1cb686cfc",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/audio_decode_base.dart",
+          "lines": "74-76,254-256"
+        }
+      ],
+      "kind": "duplicated logic",
+      "observation": "The `duration` computation is identical in PcmAudio and AudioInfo.",
+      "certainty": "confirmed",
+      "proposed_fix": "A private `_durationOf(frameCount, sampleRate)` helper; both getters call it.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "Both duration getters call a single private _durationOf(frameCount, sampleRate) helper and the duplicated expression is gone.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D004",
+      "source_index": 4,
+      "source_item_digest": "f5cf1513f9cde96519434cf80a0841b01b28f03bddae2f945a0d80a8314a84b6",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/resample.dart",
+          "lines": "33,92-95,163"
+        },
+        {
+          "path": "lib/src/wav_decoder.dart",
+          "lines": "244-246"
+        }
+      ],
+      "kind": "repeated magic numbers",
+      "observation": "The int16 limits appear as literals in six places; a named constant (`_int16Scale`) exists at base:136. Float -> int16 multiplies by 32767 (wav_decoder.dart:244); `toFloat32` divides by 32768 (audio_decode_base.dart:88). The asymmetry is not documented.",
+      "certainty": "confirmed",
+      "proposed_fix": "Named int16 limit constants; one sentence of justification for the asymmetry, a fix and a round-trip test if it is not intentional.",
+      "related_rule_ids": [
+        "audio_decode/AD-13"
+      ],
+      "issue_url": null,
+      "closure_criteria": "Named int16 limit constants replace the literals in all six places. The 32767 versus 32768 asymmetry carries a justification sentence or is fixed together with a round-trip test.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D005",
+      "source_index": 5,
+      "source_item_digest": "1a5a4ab5b8f810b85dec05d54433bcac198be8caaed147fa91407405533532d7",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/audio_decode_base.dart",
+          "lines": "369-381"
+        }
+      ],
+      "kind": "misplaced dartdoc",
+      "observation": "The 'The shared decode path...' comment describing `_decode` sits above `typedef _DecodeFn`.",
+      "certainty": "confirmed",
+      "proposed_fix": "Move the comment above `_decode` and write a short definition for the typedef.",
+      "related_rule_ids": [
+        "audio_decode/AD-12"
+      ],
+      "issue_url": null,
+      "closure_criteria": "The shared decode path comment sits directly above _decode and typedef _DecodeFn carries its own short doc comment.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D006",
+      "source_index": 6,
+      "source_item_digest": "3170d6a6cf88ccfca1c65b875246c2b186b6c3b1fbc0dce1a9abe5fe1a3223cf",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/audio_decode_base.dart",
+          "lines": "1-8"
+        }
+      ],
+      "kind": "style inconsistency",
+      "observation": "The relative `wav_decoder.dart` import comes before `package:ffi` and `bindings.dart` comes after it; `directives_ordering` is off.",
+      "certainty": "confirmed",
+      "proposed_fix": "Order dart: -> package: -> relative; add the lint to analysis_options.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "Imports in lib/src/audio_decode_base.dart are ordered dart:, package: and relative, and directives_ordering is enabled in analysis_options.yaml.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D007",
+      "source_index": 7,
+      "source_item_digest": "63b2949f2800bc82c69382767aae030956422e56b394d9ac93076a8e823e352f",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "lib/src/audio_decode_base.dart",
+          "lines": "50-58"
+        }
+      ],
+      "kind": "unenforced precondition",
+      "observation": "The ctor dartdoc says 'samples.length must be an exact multiple of channels' but does not validate it; `frameCount` silently rounds down.",
+      "certainty": "confirmed",
+      "proposed_fix": "`assert(channels > 0 && samples.length % channels == 0)` (release behavior unchanged) + a debug test.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "The PcmAudio constructor asserts channels > 0 and samples.length % channels == 0. A debug test constructs an invalid PcmAudio and expects the assert to fire.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D008",
+      "source_index": 8,
+      "source_item_digest": "9a41117b9be7181f37a9f6077a1e8286a7bc9659791c16cfaace46189bdcb6c1",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "AGENTS.md",
+          "lines": "59"
+        },
+        {
+          "path": "lib/src/bindings.dart",
+          "lines": "54-79"
+        }
+      ],
+      "kind": "documentation drift",
+      "observation": "The layout line lists only ad_decode_vorbis, ad_decode_mp3 and ad_free for the bindings; ad_info_vorbis and ad_info_mp3 are missing.",
+      "certainty": "confirmed",
+      "proposed_fix": "Complete the list.",
+      "related_rule_ids": [
+        "audio_decode/AD-02"
+      ],
+      "issue_url": null,
+      "closure_criteria": "The AGENTS.md Layout list names ad_info_vorbis and ad_info_mp3 next to the other bindings symbols.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D009",
+      "source_index": 9,
+      "source_item_digest": "f151375ba7a227fc66e8ec9719352be6ef6582c0e570714733a34cfe27e709e5",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "pubspec.yaml",
+          "lines": null
+        }
+      ],
+      "kind": "platform declaration",
+      "observation": "README.md:337-341 and AGENTS.md:11 give the verified targets as Linux/macOS/Windows on the Dart VM. blake3_ffi, simdjson_dart, xlsxwriter and hf_tokenizers block pana's mobile inference with `platforms:` (rationale: blake3_ffi pubspec.yaml:30-42); this package has no declaration.",
+      "certainty": "confirmed",
+      "proposed_fix": "Add `platforms: linux/macos/windows` in the same commit as the README.",
+      "related_rule_ids": [],
+      "issue_url": null,
+      "closure_criteria": "pubspec.yaml declares platforms: for linux, macos and windows and the README target list matches it.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    },
+    {
+      "id": "audio_decode-D010",
+      "source_index": 10,
+      "source_item_digest": "ce96a68d78db5bddc4079d954c5202a0f56e346ad66f5e88198c12cff6c16578",
+      "baseline_revision": "53aa3c6",
+      "status": "open",
+      "size": "small",
+      "locations": [
+        {
+          "path": "analysis_options.yaml",
+          "lines": "1"
+        }
+      ],
+      "kind": "analysis strictness",
+      "observation": "Only `lints/recommended`. strict-casts, strict-inference, strict-raw-types and public_member_api_docs from image_ffi are off here.",
+      "certainty": "confirmed",
+      "proposed_fix": "Turn on the same settings and resolve the resulting diagnostics in the same PR.",
+      "related_rule_ids": [
+        "audio_decode/AD-12"
+      ],
+      "issue_url": null,
+      "closure_criteria": "analysis_options.yaml enables strict-casts, strict-inference, strict-raw-types and public_member_api_docs and dart analyze reports no new diagnostics.",
+      "review_trigger": "Before modifying the affected code",
+      "resolution": null
+    }
+  ]
+}

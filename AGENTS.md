@@ -63,3 +63,7 @@ void main() {
 - `test/` — suite and `test/fixtures/`
 
 `dart test` runs the suite and the build hook. `dart analyze`. SDK `^3.10.0`.
+
+## Contributing
+
+Before changing this repository, read [CONTRIBUTING.md](CONTRIBUTING.md), [package engineering rules](docs/engineering/package.md), and the [debt register](docs/engineering/debt.json). These requirements apply to every contributor. The usage guidance above remains the consumer contract.
