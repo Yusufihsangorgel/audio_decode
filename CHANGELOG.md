@@ -1,3 +1,20 @@
+## 1.3.6
+
+- README: `detectFormat` is documented as also returning `AudioFormat.wav`.
+- README: the `Float32List` snippet shows the `dart:typed_data` import it needs.
+- README and `example/info_without_decoding.dart`: a three-minute 44.1 kHz
+  stereo track is about 30 MiB as 16-bit PCM and about 61 MiB as float samples.
+- README: removed the timing comparison against another decoder, the
+  description of a Flutter-based decoder, the wrapper comparison table and the
+  `audioInfo` timing table. The repository has no benchmark or test behind them.
+- README: Flutter is no longer described as tested. CI runs the Dart VM tests
+  on Linux, macOS and Windows.
+- README: the standalone binary section now agrees with the Platforms section
+  about what `dart compile exe` does.
+- README: `bench/vs_ffmpeg.dart` is described as checking that both paths decode
+  the same number of frames, which is what it checks.
+- `example/README.md` lists all three examples.
+
 ## 1.3.5
 
 - The build hook returns early when a build does not request code assets.

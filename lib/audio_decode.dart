@@ -5,7 +5,8 @@
 /// no prebuilt binary to ship and no platform plugin or system library to
 /// install beyond a C toolchain. Decoding runs in native code and copies the
 /// result into a Dart [Int16List], so callers never manage native memory. The
-/// same code path runs in pure Dart (CLI, servers, tests) and in Flutter.
+/// same code path runs in pure Dart (CLI, servers, tests). Flutter runtime
+/// support is not verified in this repository.
 ///
 /// Decoding is deterministic for a given build, and the geometry it reports is
 /// the same everywhere. Sample values are not bit-identical across CPU

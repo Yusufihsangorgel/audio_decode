@@ -12,19 +12,15 @@ sample rate and channel count of each result](https://raw.githubusercontent.com/
 nothing in the SDK decodes MP3 or Ogg Vorbis. The nearest pure-Dart option,
 `glint_audio_pure`, does export a real `mp3Decode`
 (`lib/src/mp3_decoder.dart:32`), but its library file exports MP3 and WAV only
-(`lib/glint_audio_pure.dart`), with no Ogg Vorbis anywhere in the package. On
-the 7,589-byte fixture in this repo's tests, decoding took 206 µs here against
-41.2 ms there, measured in both orderings so neither side paid VM warmup
-alone. Their sample counts differed by exactly one MP3 frame, 94,464 against
-92,160, which is the usual encoder-delay handling difference and not something
-I chased down.
+(`lib/glint_audio_pure.dart`), with no Ogg Vorbis anywhere in the package. The
+committed benchmarks measure this package's decode throughput, and none of them
+runs against `glint_audio_pure`. Run a comparison on your own files before
+choosing between decoders.
 
-**Instead of `audio_decoder`.** It is the most-downloaded named option and it
-routes to the platform codecs, which costs a hard dependency on Flutter: its
-`pubspec.yaml` declares `flutter: sdk: flutter` alongside
-`flutter_web_plugins`. A `dart run` process has no Flutter engine to host
-those channels, so it cannot run in a CLI, a test, or a server at all. This
-package is plain Dart and behaves the same way in all three.
+**Instead of a platform-codec plugin.** This package has no Flutter SDK
+dependency: its `pubspec.yaml` depends on `ffi`, `hooks`, `code_assets` and
+`native_toolchain_c` only. Decoding runs in C code that the build hook
+compiles. A `dart run` process or a `dart test` run needs no Flutter engine.
 
 **Reach for it when**
 
@@ -41,9 +37,11 @@ decoders are compiled from source by a Dart build hook, which makes the package
 self-contained: no platform plugins, no bundled binary, and no system library to
 install beyond a C toolchain.
 
-The same code path runs in pure Dart (command-line tools, servers, tests) and
-in Flutter. That makes it a good fit for waveform rendering, audio analysis,
-resampling, machine-learning preprocessing, servers and games.
+The same code path runs in pure Dart (command-line tools, servers, tests). That
+makes it a good fit for waveform rendering, audio analysis, resampling,
+machine-learning preprocessing, servers and games. CI runs the Dart VM tests on
+Linux, macOS and Windows. Flutter runtime support is not verified in this
+repository.
 
 Decoding is deterministic for a given build: the same bytes decode to the same
 samples every time, and the geometry (channel count, sample rate, frame count)
@@ -111,8 +109,8 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
   normalized and per-channel forms described below.
 - `decodeAudio(Uint8List)` sniffs the format and dispatches.
 - `decodeOgg(Uint8List)` and `decodeMp3(Uint8List)` decode a known format.
-- `detectFormat(Uint8List)` returns `AudioFormat.ogg`, `AudioFormat.mp3` or
-  `AudioFormat.unknown`.
+- `detectFormat(Uint8List)` returns `AudioFormat.ogg`, `AudioFormat.mp3`,
+  `AudioFormat.wav` or `AudioFormat.unknown`.
 - `encodeWav(PcmAudio)` returns a canonical 16-bit PCM WAV as `Uint8List`.
 - `audioInfo(Uint8List)` returns an `AudioInfo` with `sampleRate`, `channels`,
   `frameCount` and `duration` without decoding to PCM; `oggInfo` and `mp3Info`
@@ -154,6 +152,8 @@ channel at a time. `PcmAudio` provides those directly so you do not hand-roll a
 divide-by-32768 loop:
 
 ```dart
+import 'dart:typed_data';
+
 final pcm = decodeAudio(bytes);
 
 // All channels, interleaved, normalized to [-1.0, 1.0].
@@ -184,20 +184,15 @@ print('${info.duration} at ${info.sampleRate} Hz, ${info.channels} ch');
 ```
 
 It reports exactly what a full decode would, which the tests check against
-`decodeAudio` for every fixture. Measured on a one-second stereo fixture,
-warmed up and averaged (Apple M-series):
+`decodeAudio` for every fixture. No timing comparison is committed. Measure it
+on your own files if speed matters.
 
-| Format | `audioInfo` | `decodeAudio` |
-|---|---|---|
-| Ogg Vorbis | 107 µs | 511 µs |
-| MP3 | 0.9 µs | 217 µs |
+The two formats do different work. Vorbis stores its length in the container,
+which stb_vorbis reads after opening the stream. MP3 has no total-length field,
+so the frame headers still have to be walked. What is skipped is the decoding
+and the PCM buffer.
 
-The two formats differ because of what each has to do. Vorbis stores its
-length in the container, which stb_vorbis reads after opening the stream. MP3 has
-no total-length field, so the frame headers still have to be walked; what is
-skipped is the decoding and the PCM buffer, which is where the time goes.
-
-Time is the smaller half. The PCM buffer is the other one, and it does not
+Time is not the only cost. The PCM buffer is the other one, and it does not
 shrink with a faster machine:
 
 ```
@@ -208,8 +203,9 @@ sine_48000_mono_halfsec.mp3            3 KB    104 KB     33x
 ```
 
 Those are one-second tones. A three-minute track at 44.1 kHz stereo is about
-30 MB of float samples and an album is most of a gigabyte — to print a running
-time that is already in the header. `dart run
+30 MiB as 16-bit PCM and about 61 MiB as float samples, and an album of float
+samples is most of a gigabyte, to print a running time that is already in the
+header. `dart run
 example/info_without_decoding.dart` measures it on the fixtures in this
 repository.
 
@@ -226,19 +222,11 @@ Whisper, wav2vec 2.0 and the Vosk family all want the same input: **16 kHz
 mono 16-bit PCM**. A decoded file is almost never that. 44.1 kHz stereo is the
 normal case, and something has to bridge the two.
 
-Whether *you* have to is worth checking first, because the Dart wrappers differ
-and the answer decides whether this section is useful to you at all. Read from
-their own docs, at the versions current on 2026-08-08:
-
-| Wrapper | Does it convert for you? |
-|---|---|
-| [`whisper_ggml`](https://pub.dev/packages/whisper_ggml) 2.6.0 | On Android, iOS and macOS, yes: it bundles FFmpeg and converts non-WAV input. On **Windows and Linux it does not bundle FFmpeg**: it uses an `ffmpeg` on `PATH` when one is there, and its README says that otherwise "the input must already be a 16 kHz mono WAV". Its streaming entry point, `transcribeLive`, takes 16 kHz mono PCM16 on every platform. |
-| [`vosk_flutter`](https://pub.dev/packages/vosk_flutter) 0.3.48 | No. `acceptWaveformBytes` takes bytes as they are (its README labels them "PCM 16-bit mono format"), and you fix the rate when you build the recognizer. The package contains no resampling. |
-
-So the gap is narrower than "everyone needs this", and real where it exists:
-Windows and Linux desktop without ffmpeg installed, live PCM streams, and
-wrappers that convert nothing. On macOS with `whisper_ggml` and a file on disk,
-it is already handled and you can skip the step.
+Whether *you* have to is worth checking first, because the Dart wrappers differ.
+Some convert audio for you and some take bytes as they are. Check the input
+contract of your speech wrapper and your target platform before calling
+`toSpeechPcm`. With its default rate it produces 16 kHz mono 16-bit PCM and
+does nothing else.
 
 ```dart
 final pcm = decodeAudio(File('interview.mp3').readAsBytesSync());
@@ -293,21 +281,18 @@ about 25 seconds of process startup that in-process decoding never pays, while
 one long file is close to a wash.
 
 `dart run bench/vs_ffmpeg.dart` reproduces the chart on your machine. It checks
-that both paths decode to the same samples before it reports any timing, which
-means a number that looks too good has to survive that first. `dart run bench/bench.dart`
+that both paths decode to the same amount of audio, within 1,024 frames, before
+it reports any timing, which means a number that looks too good has to survive
+that first. `dart run bench/bench.dart`
 measures absolute throughput instead: the 30-second stereo 44100 Hz clip above
 is 2.6M interleaved samples, or about 205 million samples per second. These are
 synthetic-tone numbers; a dense music track decodes more slowly.
 
 ## Shipping a standalone binary
 
-`dart compile exe` does not run build hooks, so a program that depends on this
-package stops before it starts:
-
-```
-$ dart compile exe bin/my_cli.dart
-'dart compile' does not support build hooks, use 'dart build' instead.
-```
+`dart compile exe` does not carry the native library that the build hook
+produces. In the run documented under Platforms below, compilation succeeded and
+the executable failed on its first decode.
 
 `dart build cli` runs the hook and lays the pieces out for you:
 

@@ -75,10 +75,9 @@ void main() {
   );
   print('');
   print('Those are one-second tones. A three-minute track at 44.1 kHz stereo');
-  print(
-    'is about 30 MB of float samples, and an album is most of a gigabyte —',
-  );
-  print('to print a running time you already have in the header.');
+  print('is about 30 MiB as 16-bit PCM and 61 MiB as float samples. An album');
+  print('of float samples is most of a gigabyte, to print a running time you');
+  print('already have in the header.');
   print('');
   print('`audioInfo` picks the right reader from the bytes. `oggInfo` and');
   print('`mp3Info` are there when you already know the format and would');

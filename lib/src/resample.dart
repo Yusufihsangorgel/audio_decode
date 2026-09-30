@@ -108,7 +108,7 @@ PcmAudio resample(PcmAudio audio, int targetRate) {
 /// themselves, though usually only on part of the platforms they support,
 /// while others never convert and take the bytes exactly as given. Streaming
 /// entry points generally convert nothing. The README's "Feeding a speech
-/// model" section compares the current Dart wrappers.
+/// model" section says what to check.
 ///
 /// Equivalent to `resample(toMono(audio), sampleRate)`; the default is 16000
 /// and the parameter is there for a model that wants 8 kHz.

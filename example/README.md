@@ -1,12 +1,13 @@
 # audio_decode examples
 
-Two command-line examples. Both run with no arguments against fixtures that
+Three command-line examples. Each runs with no arguments against fixtures that
 ship with the package, so you can see the output before finding an audio file
 of your own.
 
 | File | What it shows |
 |---|---|
 | `audio_decode_example.dart` | Decode any Ogg/MP3/WAV, inspect the stream, write it back as a WAV |
+| `info_without_decoding.dart` | Read a file's sample rate, channels and duration with `audioInfo`, and compare the memory a full decode needs |
 | `speech_input.dart` | Turn a decoded file into the 16 kHz mono PCM a speech model wants — and measure what skipping the filter would cost |
 
 ## `audio_decode_example.dart` — decode and inspect
