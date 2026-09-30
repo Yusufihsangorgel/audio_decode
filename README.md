@@ -8,6 +8,19 @@ sample rate and channel count of each result](https://raw.githubusercontent.com/
 
 ## Why this instead of what you already have
 
+**Instead of just_audio.** They do different jobs. just_audio is a player.
+Its README lists Android, iOS, macOS, web, Linux and Windows, it plays assets,
+files, URLs and streams, and it depends on the Flutter SDK. Its README also
+lists experimental waveform and FFT visualizers for audio that is playing, but
+neither `lib/` in just_audio 0.9.46 nor its platform interface package 4.6.0
+has an API that returns the decoded samples of a file as a list. This package
+returns the samples (`Int16List`, or `Float32List` through `toFloat32()`) and
+has no playback. Choose this package when your code needs the samples, for
+waveform rendering, analysis or model input. Choose just_audio when the goal is
+to hear the file, when the source is a URL or a stream, or when the app runs in
+a browser. This package is tested on the Dart VM on Linux, macOS and Windows
+only.
+
 **Instead of a pure-Dart decoder.** There is no `dart:` route for this;
 nothing in the SDK decodes MP3 or Ogg Vorbis. The nearest pure-Dart option,
 `glint_audio_pure`, does export a real `mp3Decode`

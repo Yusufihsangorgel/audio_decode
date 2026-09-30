@@ -14,6 +14,8 @@
 - README: `bench/vs_ffmpeg.dart` is described as checking that both paths decode
   the same number of frames, which is what it checks.
 - `example/README.md` lists all three examples.
+- README: the comparison section now says when just_audio is the better
+  choice and when this package is.
 
 ## 1.3.5
 
