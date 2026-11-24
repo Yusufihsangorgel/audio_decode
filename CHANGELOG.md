@@ -1,5 +1,8 @@
 ## 1.3.6
 
+- Backport the upstream stb_vorbis memory-offset bounds check to fix Clang's
+  `-Wtautological-compare` warning and avoid out-of-bounds pointer arithmetic
+  (nothings/stb#1745, commit c662d8807ffd26ebe843fe1c871d4cd3b420f7b7).
 - The pubspec description now lists WAV next to MP3 and Ogg Vorbis, says that
   MP3 and Ogg Vorbis are native code, and says that the web decodes WAV only.
   It no longer says "pure-Dart friendly".
